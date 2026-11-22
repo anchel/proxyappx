@@ -8,8 +8,8 @@
 
 ## 下载安装
 
-1. 从 [Releases](https://github.com/anchel/proxyappx/releases) 下载最新的 `ProxyAppX-<版本>.zip`（已用 Developer ID 签名并经 Apple 公证）
-2. 解压后把 `ProxyAppX.app` 拖到「应用程序」文件夹（**必须在 /Applications 下**，网络扩展才能激活），然后打开
+1. 从 [Releases](https://github.com/anchel/proxyappx/releases) 下载最新的 `ProxyAppX-<版本>.dmg`（里面的 App 已用 Developer ID 签名并经 Apple 公证）
+2. 打开 DMG，把 `ProxyAppX` 拖到旁边的 `Applications` 快捷方式上（**必须在 /Applications 下**，网络扩展才能激活），然后从「应用程序」中打开
 3. 按 App 概览页的引导安装网络扩展，在「系统设置 › 通用 › 登录项与扩展 › 网络扩展」中允许，并允许添加代理配置
 
 系统要求：macOS 15 及以上。
@@ -45,9 +45,13 @@ Config/                         xcconfig：Bundle ID 前缀、签名（Signing.x
 Packages/ProxyAppXCore/         共享核心库：数据模型、规则引擎、SOCKS5 / HTTP 协议、连接器、IPC（带测试）
 ProxyAppXExtension/             系统扩展：透明代理 Provider、TCP/UDP 转发、进程识别、连接统计
 ProxyAppX/                      主 App：SwiftUI 界面、菜单栏、扩展安装、配置存储（钥匙串）
-scripts/build.sh                构建 / 签名 / 安装脚本
-scripts/release.sh              发布脚本：Developer ID 导出、公证、打包
+Makefile                        所有构建命令的入口（运行 make 查看列表）
+scripts/build.sh                构建 / 签名 / 安装（make build、install、check）
+scripts/release.sh              发布构建：Developer ID 导出、公证（make release）
+scripts/make-dmg.sh             把已公证的 App 打包成 DMG（make dmg）
+scripts/publish.sh              打版本标签并发布 GitHub Release（make publish）
 scripts/dev-socks5.py           会打印每个连接的 SOCKS5 测试服务器
+docs/release-notes/             各版本的发布说明
 docs/PRD.md                     产品需求文档
 ```
 
@@ -69,23 +73,25 @@ cp Config/Signing.example.xcconfig Config/Signing.xcconfig
 
 **开发调试（推荐）**：使用自动签名。先在 Xcode › Settings › Accounts 里登录 Apple ID，构建时 Xcode 会自动注册 App ID（包含 Network Extensions、System Extension 能力）并生成描述文件。
 
-**Developer ID 分发**：直接运行 `scripts/release.sh` 即可（见[发布](#发布)），Xcode 会自动生成 Developer ID 描述文件并提交公证。如果想手动管理，就在 developer.apple.com 创建两个 App ID（`<前缀>.app` 和 `<前缀>.app.extension`），勾选 *Network Extensions* 和 *System Extension*，再创建对应的 Developer ID 描述文件，然后按 `Signing.example.xcconfig` 里的方案 B 填写。
+**Developer ID 分发**：直接运行 `make release` 即可（见[发布](#发布)），Xcode 会自动生成 Developer ID 描述文件并提交公证。如果想手动管理，就在 developer.apple.com 创建两个 App ID（`<前缀>.app` 和 `<前缀>.app.extension`），勾选 *Network Extensions* 和 *System Extension*，再创建对应的 Developer ID 描述文件，然后按 `Signing.example.xcconfig` 里的方案 B 填写。
 
 ### 3. 构建并安装
 
+所有构建命令都通过 `make` 执行，直接运行 `make` 可以查看全部命令。
+
 ```bash
-scripts/build.sh
+make install
 ```
 
-脚本会生成工程、签名构建，然后安装到 `/Applications/ProxyAppX.app` 并打开它。系统扩展**只能从 /Applications 激活**。
+它会生成工程、签名构建，然后安装到 `/Applications/ProxyAppX.app` 并打开。系统扩展**只能从 /Applications 激活**。加上 `CONFIG=Release` 可以构建 Release 版本；只构建不安装用 `make build`。
 
 只检查能否编译、运行测试（不需要签名）：
 
 ```bash
-scripts/build.sh check
+make check
 ```
 
-也可以先运行 `xcodegen generate`，再用 Xcode 打开 `ProxyAppX.xcodeproj` 开发。
+也可以先运行 `make project`，再用 Xcode 打开 `ProxyAppX.xcodeproj` 开发。
 
 ### 4. 首次使用
 
@@ -105,11 +111,23 @@ curl https://ifconfig.me
 
 ## 发布
 
-```bash
-scripts/release.sh
-```
+1. 在 `project.yml` 的 `MARKETING_VERSION` 中改好版本号，在 `docs/release-notes/v<版本>.md` 中写好发布说明，然后提交并推送。
+2. 生成安装包：
 
-脚本会做 Release 归档，用 Developer ID 导出并提交 Apple 公证，等公证通过后把装订好票据的 App 打包成 `build/release/ProxyAppX-<版本>.zip`，并生成 SHA-256。需要先在 Xcode 中登录开发者账号：导出时会自动生成 Developer ID 描述文件，并用这个账号提交公证。版本号在 `project.yml` 的 `MARKETING_VERSION` 中修改。
+   ```bash
+   make release
+   ```
+
+   它会做 Release 归档，用 Developer ID 导出并提交 Apple 公证，等公证通过后把装订好票据的 App 打包成 `build/release/ProxyAppX-<版本>.dmg`，并生成 SHA-256。需要先在 Xcode 中登录开发者账号：导出时会自动生成 Developer ID 描述文件，并用这个账号提交公证。
+3. 发布：
+
+   ```bash
+   make publish
+   ```
+
+   它会核对 DMG 是从当前已推送的提交构建的，然后打上 `v<版本>` 标签，创建 GitHub Release 并上传 DMG 和校验文件（需要先 `gh auth login`）。
+
+DMG 本身不签名，打开 App 时 Gatekeeper 会检查里面已公证的 App。如果也想给 DMG 签名并公证，先用 `xcrun notarytool store-credentials` 保存公证凭据，再运行 `make release NOTARY_PROFILE=<配置名>`。
 
 ## 调试
 
@@ -125,7 +143,7 @@ log stream --predicate 'subsystem == "com.proxyappx.extension"' --level info
 systemextensionsctl list
 ```
 
-扩展更新后，重新运行 `scripts/build.sh` 即可：脚本每次会使用新的构建号，App 启动时发现自带的扩展与已安装的版本不同，就会自动替换（无需重新批准），并在系统断开会话后自动重连。
+扩展更新后，重新运行 `make install` 即可：脚本每次会使用新的构建号，App 启动时发现自带的扩展与已安装的版本不同，就会自动替换（无需重新批准），并在系统断开会话后自动重连。
 
 端到端自测：启动一个会打印每个连接的本地 SOCKS5 测试服务器，在 App 中添加服务器 `127.0.0.1:1080`，再给 `/usr/bin/curl` 加一条代理规则：
 

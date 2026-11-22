@@ -1,11 +1,12 @@
 #!/bin/zsh
-# 生成可分发的安装包：Release 归档 → Developer ID 导出并提交 Apple 公证 → 等待公证 → 打包 zip。
+# 生成可分发的安装包：Release 归档 → Developer ID 导出并提交 Apple 公证 → 等待公证 → 打包 DMG。
 #
-#   scripts/release.sh
+#   make release        （等同于 scripts/release.sh）
 #
 # 前提：Xcode › Settings › Accounts 已登录开发者账号（导出时自动生成 Developer ID 描述文件，
 # 并用该账号提交公证）；Config/Signing.xcconfig 已填写 DEVELOPMENT_TEAM。
-# 产物：build/release/ProxyAppX-<版本>.zip（内含已公证并装订票据的 ProxyAppX.app）及其 SHA-256。
+# 产物：build/release/ProxyAppX-<版本>.dmg（内含已公证并装订票据的 ProxyAppX.app）及其 SHA-256；
+# build/release/COMMIT 记录构建所用的提交，make publish 会核对它。
 set -euo pipefail
 
 ROOT="${0:A:h:h}"
@@ -18,8 +19,14 @@ BUILD_NUMBER="$(date +%Y%m%d%H%M)"
 OUT="$ROOT/build/release"
 ARCHIVE="$OUT/ProxyAppX.xcarchive"
 
+if [[ -n "$(git status --porcelain)" ]]; then
+  echo "⚠️  工作区有未提交的改动，安装包将包含这些改动；正式发布前请先提交。"
+fi
+
 rm -rf "$OUT"
 mkdir -p "$OUT"
+git rev-parse HEAD > "$OUT/COMMIT"
+[[ -z "$(git status --porcelain)" ]] || echo "dirty" >> "$OUT/COMMIT"
 xcodegen generate --quiet
 
 echo "==> 归档 $VERSION ($BUILD_NUMBER)"
@@ -62,11 +69,7 @@ APP="$OUT/notarized/ProxyAppX.app"
 echo "==> 校验"
 xcrun stapler validate "$APP"
 spctl --assess --type execute -vv "$APP"
-codesign -d --entitlements - "$APP/Contents/Library/SystemExtensions/"*.systemextension 2>/dev/null \
-  | grep -q "app-proxy-provider-systemextension" || { echo "扩展缺少 Developer ID 版本的 NE entitlement"; exit 1; }
+ENTITLEMENTS="$(codesign -d --entitlements - "$APP/Contents/Library/SystemExtensions/"*.systemextension 2>/dev/null)"
+[[ "$ENTITLEMENTS" == *app-proxy-provider-systemextension* ]] || { echo "扩展缺少 Developer ID 版本的 NE entitlement"; exit 1; }
 
-ZIP="$OUT/ProxyAppX-$VERSION.zip"
-ditto -c -k --sequesterRsrc --keepParent "$APP" "$ZIP"
-(cd "$OUT" && shasum -a 256 "${ZIP:t}" > "${ZIP:t}.sha256")
-echo "✅ $ZIP"
-cat "$ZIP.sha256"
+"$ROOT/scripts/make-dmg.sh" "$APP" "$VERSION" "$OUT"

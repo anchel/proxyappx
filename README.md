@@ -8,8 +8,8 @@ Full product requirements (in Chinese): [docs/PRD.md](docs/PRD.md).
 
 ## Download and install
 
-1. Download the latest `ProxyAppX-<version>.zip` from [Releases](https://github.com/anchel/proxyappx/releases). It is signed with Developer ID and notarized by Apple.
-2. Unzip it and drag `ProxyAppX.app` into the Applications folder. **It must live in /Applications**, or the network extension cannot be activated. Then open it.
+1. Download the latest `ProxyAppX-<version>.dmg` from [Releases](https://github.com/anchel/proxyappx/releases). The app inside is signed with Developer ID and notarized by Apple.
+2. Open the DMG and drag `ProxyAppX` onto the `Applications` shortcut next to it. **It must live in /Applications**, or the network extension cannot be activated. Then open it from Applications.
 3. Follow the Overview page to install the network extension, allow it in **System Settings › General › Login Items & Extensions › Network Extensions**, and allow the proxy configuration when macOS asks.
 
 Requires macOS 15 or later.
@@ -45,9 +45,13 @@ Config/                         xcconfigs: bundle ID prefix, signing (Signing.xc
 Packages/ProxyAppXCore/         Shared core: models, rule engine, SOCKS5 / HTTP clients, connector, IPC (with tests)
 ProxyAppXExtension/             System extension: transparent proxy provider, TCP/UDP relays, process lookup, stats
 ProxyAppX/                      Main app: SwiftUI UI, menu bar, extension install, config storage (Keychain)
-scripts/build.sh                Build / sign / install
-scripts/release.sh              Release: Developer ID export, notarization, packaging
+Makefile                        Entry point for all build commands (run `make` to list them)
+scripts/build.sh                Build / sign / install (make build, install, check)
+scripts/release.sh              Release: Developer ID export, notarization (make release)
+scripts/make-dmg.sh             Packages the notarized app as a DMG (make dmg)
+scripts/publish.sh              Tags the version and publishes the GitHub release (make publish)
 scripts/dev-socks5.py           Test SOCKS5 server that prints every connection
+docs/release-notes/             Release notes, one file per version
 docs/PRD.md                     Product requirements (Chinese)
 ```
 
@@ -69,23 +73,25 @@ Edit `Config/Signing.xcconfig` and set `DEVELOPMENT_TEAM`. If the `com.proxyappx
 
 **Development (recommended)**: use automatic signing. Sign in under Xcode › Settings › Accounts; on build, Xcode registers the App IDs (with the Network Extensions and System Extension capabilities) and creates the provisioning profiles.
 
-**Developer ID distribution**: just run `scripts/release.sh` (see [Releasing](#releasing)); Xcode creates the Developer ID profiles and submits the app for notarization. To manage this by hand instead, create two App IDs on developer.apple.com (`<prefix>.app` and `<prefix>.app.extension`) with *Network Extensions* and *System Extension* enabled, create matching Developer ID profiles, and fill in option B in `Signing.example.xcconfig`.
+**Developer ID distribution**: just run `make release` (see [Releasing](#releasing)); Xcode creates the Developer ID profiles and submits the app for notarization. To manage this by hand instead, create two App IDs on developer.apple.com (`<prefix>.app` and `<prefix>.app.extension`) with *Network Extensions* and *System Extension* enabled, create matching Developer ID profiles, and fill in option B in `Signing.example.xcconfig`.
 
 ### 3. Build and install
 
+All build commands go through `make`; run `make` on its own to list them.
+
 ```bash
-scripts/build.sh
+make install
 ```
 
-The script generates the project, builds and signs it, installs it to `/Applications/ProxyAppX.app`, and opens it. System extensions **can only be activated from /Applications**.
+This generates the project, builds and signs it, installs it to `/Applications/ProxyAppX.app`, and opens it. System extensions **can only be activated from /Applications**. Add `CONFIG=Release` for a Release build, or use `make build` to build without installing.
 
 To only check that everything compiles and run the tests (no signing needed):
 
 ```bash
-scripts/build.sh check
+make check
 ```
 
-You can also run `xcodegen generate` and work in `ProxyAppX.xcodeproj` with Xcode.
+You can also run `make project` and work in `ProxyAppX.xcodeproj` with Xcode.
 
 ### 4. First run
 
@@ -105,11 +111,23 @@ It should print the proxy's exit IP, while a browser visiting the same address s
 
 ## Releasing
 
-```bash
-scripts/release.sh
-```
+1. Set the new version in `MARKETING_VERSION` in `project.yml`, write the release notes in `docs/release-notes/v<version>.md`, then commit and push.
+2. Build the installer:
 
-The script makes a Release archive, exports it with Developer ID signing, submits it to Apple for notarization, waits for the ticket, and packages the stapled app as `build/release/ProxyAppX-<version>.zip` with a SHA-256 checksum. Sign in to your developer account in Xcode first: the export creates the Developer ID profiles and notarizes with that account. Bump the version via `MARKETING_VERSION` in `project.yml`.
+   ```bash
+   make release
+   ```
+
+   This makes a Release archive, exports it with Developer ID signing, submits it to Apple for notarization, waits for the ticket, and packages the stapled app as `build/release/ProxyAppX-<version>.dmg` with a SHA-256 checksum. Sign in to your developer account in Xcode first: the export creates the Developer ID profiles and notarizes with that account.
+3. Publish it:
+
+   ```bash
+   make publish
+   ```
+
+   This checks that the DMG was built from the current, pushed commit, tags `v<version>`, and creates the GitHub release with the DMG and its checksum (requires `gh auth login`).
+
+The DMG itself is not signed; Gatekeeper checks the notarized app inside when it is opened. To sign and notarize the DMG as well, save notary credentials with `xcrun notarytool store-credentials` and run `make release NOTARY_PROFILE=<profile name>`.
 
 ## Debugging
 
@@ -125,7 +143,7 @@ Check the system extension's state:
 systemextensionsctl list
 ```
 
-After changing the extension, just run `scripts/build.sh` again. Every build gets a new build number; on launch the app notices that its bundled extension differs from the installed one, replaces it (no re-approval needed), and reconnects once macOS drops the old session.
+After changing the extension, just run `make install` again. Every build gets a new build number; on launch the app notices that its bundled extension differs from the installed one, replaces it (no re-approval needed), and reconnects once macOS drops the old session.
 
 End-to-end check: start a local SOCKS5 test server that prints every connection, add server `127.0.0.1:1080` in the app, and add a proxy rule for `/usr/bin/curl`:
 
