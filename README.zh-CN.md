@@ -125,9 +125,15 @@ curl https://ifconfig.me
    make publish
    ```
 
-   它会核对 DMG 是从当前已推送的提交构建的，然后打上 `v<版本>` 标签，创建 GitHub Release 并上传 DMG 和校验文件（需要先 `gh auth login`）。
+   它会核对 DMG 是从当前已推送的提交构建的，然后打上 `v<版本>` 标签，创建 GitHub Release 并上传 DMG 和校验文件（需要先 `gh auth login`）。如果这个版本已经发布过，则替换其中的 DMG 和校验文件。
 
-DMG 本身不签名，打开 App 时 Gatekeeper 会检查里面已公证的 App。如果也想给 DMG 签名并公证，先用 `xcrun notarytool store-credentials` 保存公证凭据，再运行 `make release NOTARY_PROFILE=<配置名>`。
+DMG 本身也会用 Developer ID 签名、公证并装订票据。这需要钥匙串里有公证凭据，用 Apple ID 的 App 专用密码（或 App Store Connect API 密钥）保存一次即可：
+
+```bash
+xcrun notarytool store-credentials proxyappx-notary --team-id <Team ID>
+```
+
+然后在 `Config/Signing.xcconfig` 中写上 `NOTARY_PROFILE = proxyappx-notary`。没有配置时，DMG 不签名（里面的 App 仍是公证过的）。要给已发布版本的 DMG 补签，运行 `make dmg` 再 `make publish`，它会替换 Release 中的 DMG 和校验文件。
 
 ## 调试
 

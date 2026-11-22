@@ -125,9 +125,15 @@ It should print the proxy's exit IP, while a browser visiting the same address s
    make publish
    ```
 
-   This checks that the DMG was built from the current, pushed commit, tags `v<version>`, and creates the GitHub release with the DMG and its checksum (requires `gh auth login`).
+   This checks that the DMG was built from the current, pushed commit, tags `v<version>`, and creates the GitHub release with the DMG and its checksum (requires `gh auth login`). If the version is already published, it replaces the DMG and checksum instead.
 
-The DMG itself is not signed; Gatekeeper checks the notarized app inside when it is opened. To sign and notarize the DMG as well, save notary credentials with `xcrun notarytool store-credentials` and run `make release NOTARY_PROFILE=<profile name>`.
+The DMG is signed with Developer ID, notarized and stapled as well. That needs notary credentials in the keychain, saved once with an app-specific password for your Apple ID (or an App Store Connect API key):
+
+```bash
+xcrun notarytool store-credentials proxyappx-notary --team-id <Team ID>
+```
+
+Then set `NOTARY_PROFILE = proxyappx-notary` in `Config/Signing.xcconfig`. Without it, the DMG is left unsigned (the app inside is still notarized). To re-sign an already published version's DMG, run `make dmg` and then `make publish`, which replaces the release's DMG and checksum.
 
 ## Debugging
 

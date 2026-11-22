@@ -40,10 +40,10 @@ test: ## 只运行核心库测试
 release: ## Release 归档 → Developer ID 导出 → Apple 公证 → 打包 DMG
 	scripts/release.sh
 
-dmg: ## 用已公证的 App 重新打包 DMG（不重新构建）
+dmg: ## 用已公证的 App 重新打包、签名并公证 DMG（不重新构建）
 	scripts/make-dmg.sh build/release/notarized/ProxyAppX.app $(VERSION)
 
-publish: ## 打 v<版本> 标签，发布 GitHub Release 并上传 DMG
+publish: ## 打 v<版本> 标签并发布 Release；已发布的版本则替换 DMG
 	scripts/publish.sh $(VERSION)
 
 clean: ## 删除构建产物和生成的工程

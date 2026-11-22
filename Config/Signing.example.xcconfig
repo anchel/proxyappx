@@ -20,3 +20,9 @@ NE_PROVIDER_ENTITLEMENT = app-proxy-provider
 // NE_PROVIDER_ENTITLEMENT = app-proxy-provider-systemextension
 // APP_PROVISIONING_PROFILE_SPECIFIER = ProxyAppX App Developer ID
 // EXT_PROVISIONING_PROFILE_SPECIFIER = ProxyAppX Extension Developer ID
+
+// —— 公证 DMG（make release / make dmg 用）——
+// 先保存一次 notarytool 凭据（使用 Apple ID 的 App 专用密码，或 App Store Connect API 密钥）：
+//   xcrun notarytool store-credentials proxyappx-notary --team-id XXXXXXXXXX
+// 再在这里填写配置名。不填写时，DMG 不签名也不公证（里面的 App 仍会公证）。
+// NOTARY_PROFILE = proxyappx-notary
