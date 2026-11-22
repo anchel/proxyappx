@@ -4,6 +4,14 @@
 
 完整需求见 [docs/PRD.md](docs/PRD.md)。
 
+## 下载安装
+
+1. 从 [Releases](https://github.com/anchel/proxyappx/releases) 下载最新的 `ProxyAppX-<版本>.zip`（已用 Developer ID 签名并经 Apple 公证）
+2. 解压后把 `ProxyAppX.app` 拖到「应用程序」文件夹（**必须在 /Applications 下**，网络扩展才能激活），然后打开
+3. 按 App 概览页的引导安装网络扩展，在「系统设置 › 通用 › 登录项与扩展 › 网络扩展」中允许，并允许添加代理配置
+
+系统要求：macOS 15 及以上。
+
 ## 功能
 
 - **按应用分流**：支持 `.app` 和任意可执行文件；会自动识别应用的 helper 子进程（Chrome Helper、Electron Helper 等）
@@ -88,6 +96,14 @@ curl https://ifconfig.me
 ```
 
 应该返回代理的出口 IP，而浏览器访问同一地址仍显示本机 IP。
+
+## 发布
+
+```bash
+scripts/release.sh
+```
+
+脚本会做 Release 归档，用 Developer ID 导出并提交 Apple 公证，等公证通过后把装订好票据的 App 打包成 `build/release/ProxyAppX-<版本>.zip`，并生成 SHA-256。需要先在 Xcode 中登录开发者账号：导出时会自动生成 Developer ID 描述文件，并用这个账号提交公证。版本号在 `project.yml` 的 `MARKETING_VERSION` 中修改。
 
 ## 调试
 
