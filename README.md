@@ -1,167 +1,176 @@
-# ProxyAppX — macOS 按应用代理
+English | [简体中文](README.zh-CN.md)
 
-选中某个应用，让它的**全部网络流量**从指定的 SOCKS5 / HTTP 代理出去，其他应用不受影响。哪怕是不理会系统代理的应用（Electron、游戏、`curl` / `git` 等命令行工具）也一样有效。
+# ProxyAppX — Per-App Proxy for macOS
 
-完整需求见 [docs/PRD.md](docs/PRD.md)。
+Pick an app and send **all of its network traffic** through a SOCKS5 or HTTP proxy of your choice, while every other app keeps connecting directly. This works even for apps that ignore the system proxy settings: Electron apps, games, and command-line tools such as `curl` and `git`.
 
-## 下载安装
+Full product requirements (in Chinese): [docs/PRD.md](docs/PRD.md).
 
-1. 从 [Releases](https://github.com/anchel/proxyappx/releases) 下载最新的 `ProxyAppX-<版本>.zip`（已用 Developer ID 签名并经 Apple 公证）
-2. 解压后把 `ProxyAppX.app` 拖到「应用程序」文件夹（**必须在 /Applications 下**，网络扩展才能激活），然后打开
-3. 按 App 概览页的引导安装网络扩展，在「系统设置 › 通用 › 登录项与扩展 › 网络扩展」中允许，并允许添加代理配置
+> The app's interface is currently in Simplified Chinese. UI labels below are given in English with the Chinese text in parentheses.
 
-系统要求：macOS 15 及以上。
+## Download and install
 
-## 功能
+1. Download the latest `ProxyAppX-<version>.zip` from [Releases](https://github.com/anchel/proxyappx/releases). It is signed with Developer ID and notarized by Apple.
+2. Unzip it and drag `ProxyAppX.app` into the Applications folder. **It must live in /Applications**, or the network extension cannot be activated. Then open it.
+3. Follow the Overview page to install the network extension, allow it in **System Settings › General › Login Items & Extensions › Network Extensions**, and allow the proxy configuration when macOS asks.
 
-- **按应用分流**：支持 `.app` 和任意可执行文件；会自动识别应用的 helper 子进程（Chrome Helper、Electron Helper 等）
-- **三种动作**：代理（选择服务器）/ 直连 / 阻断
-- **代理协议**：SOCKS5（无认证、用户名密码、UDP ASSOCIATE）和 HTTP CONNECT（Basic 认证）
-- **防泄漏**：代理不可用时默认阻断；UDP 默认阻断，迫使浏览器从 QUIC 回落到 TCP；会把域名交给代理远程解析
-- **排除模式**：默认所有应用都走代理，只让指定应用直连
-- **监控**：实时连接、上下行速率、日志，以及「未匹配的应用」（帮你发现应该加规则的进程）
-- **菜单栏**：一键开关；支持登录时启动；配置可导入导出
+Requires macOS 15 or later.
 
-## 原理
+## Features
 
-```
-ProxyAppX.app（SwiftUI）──安装──▶ 系统扩展（NETransparentProxyProvider，以 root 运行）
-     │  配置 + IPC                     │ 拦截所有出站 TCP/UDP flow
-     └────────────────────────────────▶ │ 按 flow 的来源进程（签名标识 / audit token → 路径）匹配规则
-                                        ├─ 直连：交还给系统（零开销）
-                                        ├─ 阻断：拒绝连接
-                                        └─ 代理：经 SOCKS5 / HTTP CONNECT 转发
-```
+- **Per-app routing**: works with `.app` bundles and any executable, and automatically covers an app's helper processes (Chrome Helper, Electron Helper, and so on)
+- **Three actions**: Proxy (through a chosen server), Direct, or Block
+- **Proxy protocols**: SOCKS5 (no auth, username/password, UDP ASSOCIATE) and HTTP CONNECT (Basic auth)
+- **Leak protection**: connections fail closed when the proxy is down; UDP is blocked by default so browsers fall back from QUIC to TCP; hostnames are sent to the proxy for remote resolution
+- **Exclusion mode**: send every app through the proxy except the ones you mark as Direct
+- **Coexists with Clash / FlClash and other TUN tools**: see [below](#coexisting-with-clash--flclash-and-other-tun-tools)
+- **Monitoring**: live connections, upload/download rates, logs, and an "Unmatched apps" (未匹配的应用) page that surfaces processes you may want to add rules for
+- **Menu bar**: one-click on/off, launch at login, configuration import/export
 
-## 目录结构
+## How it works
 
 ```
-project.yml                     XcodeGen 工程描述（.xcodeproj 由它生成，不入库）
-Config/                         xcconfig：Bundle ID 前缀、签名（Signing.xcconfig 不入库）
-Packages/ProxyAppXCore/         共享核心库：数据模型、规则引擎、SOCKS5 / HTTP 协议、连接器、IPC（带测试）
-ProxyAppXExtension/             系统扩展：透明代理 Provider、TCP/UDP 转发、进程识别、连接统计
-ProxyAppX/                      主 App：SwiftUI 界面、菜单栏、扩展安装、配置存储（钥匙串）
-scripts/build.sh                构建 / 签名 / 安装脚本
-docs/PRD.md                     产品需求文档
+ProxyAppX.app (SwiftUI) ──installs──▶ System extension (NETransparentProxyProvider, runs as root)
+     │  config + IPC                     │ sees every outbound TCP/UDP flow
+     └──────────────────────────────────▶ │ matches rules by the flow's source process (signing ID / audit token → path)
+                                          ├─ Direct: hands the flow back to the system (zero overhead)
+                                          ├─ Block: refuses the connection
+                                          └─ Proxy: relays through SOCKS5 / HTTP CONNECT
 ```
 
-## 构建与运行
+## Repository layout
 
-### 1. 准备
+```
+project.yml                     XcodeGen spec (the .xcodeproj is generated and not committed)
+Config/                         xcconfigs: bundle ID prefix, signing (Signing.xcconfig is not committed)
+Packages/ProxyAppXCore/         Shared core: models, rule engine, SOCKS5 / HTTP clients, connector, IPC (with tests)
+ProxyAppXExtension/             System extension: transparent proxy provider, TCP/UDP relays, process lookup, stats
+ProxyAppX/                      Main app: SwiftUI UI, menu bar, extension install, config storage (Keychain)
+scripts/build.sh                Build / sign / install
+scripts/release.sh              Release: Developer ID export, notarization, packaging
+scripts/dev-socks5.py           Test SOCKS5 server that prints every connection
+docs/PRD.md                     Product requirements (Chinese)
+```
 
-- macOS 15+、Xcode 16+（当前在 Xcode 27.2 上验证过）
+## Building from source
+
+### 1. Prerequisites
+
+- macOS 15+, Xcode 16+ (verified on Xcode 27.2)
 - `brew install xcodegen`
-- 加入 **Apple Developer Program**（系统扩展和 Network Extension 都需要付费开发者账号）
+- An **Apple Developer Program** membership: system extensions and Network Extension both require a paid account
 
-### 2. 配置签名
+### 2. Configure signing
 
 ```bash
 cp Config/Signing.example.xcconfig Config/Signing.xcconfig
 ```
 
-编辑 `Config/Signing.xcconfig`，填入 `DEVELOPMENT_TEAM`。如果 `com.proxyappx` 这个前缀已被别人占用，就改 `BUNDLE_ID_PREFIX`。
+Edit `Config/Signing.xcconfig` and set `DEVELOPMENT_TEAM`. If the `com.proxyappx` prefix is already taken, change `BUNDLE_ID_PREFIX`.
 
-**开发调试（推荐）**：使用自动签名。先在 Xcode › Settings › Accounts 里登录 Apple ID，构建时 Xcode 会自动注册 App ID（包含 Network Extensions、System Extension 能力）并生成描述文件。
+**Development (recommended)**: use automatic signing. Sign in under Xcode › Settings › Accounts; on build, Xcode registers the App IDs (with the Network Extensions and System Extension capabilities) and creates the provisioning profiles.
 
-**Developer ID 分发**：在 developer.apple.com 手动创建两个 App ID（`<前缀>.app` 和 `<前缀>.app.extension`），勾选 *Network Extensions* 和 *System Extension*，再创建对应的 Developer ID 描述文件；然后按 `Signing.example.xcconfig` 里的方案 B 填写。对外分发前还需要公证（`xcrun notarytool`）。
+**Developer ID distribution**: just run `scripts/release.sh` (see [Releasing](#releasing)); Xcode creates the Developer ID profiles and submits the app for notarization. To manage this by hand instead, create two App IDs on developer.apple.com (`<prefix>.app` and `<prefix>.app.extension`) with *Network Extensions* and *System Extension* enabled, create matching Developer ID profiles, and fill in option B in `Signing.example.xcconfig`.
 
-### 3. 构建并安装
+### 3. Build and install
 
 ```bash
 scripts/build.sh
 ```
 
-脚本会生成工程、签名构建，然后安装到 `/Applications/ProxyAppX.app` 并打开它。系统扩展**只能从 /Applications 激活**。
+The script generates the project, builds and signs it, installs it to `/Applications/ProxyAppX.app`, and opens it. System extensions **can only be activated from /Applications**.
 
-只检查能否编译、运行测试（不需要签名）：
+To only check that everything compiles and run the tests (no signing needed):
 
 ```bash
 scripts/build.sh check
 ```
 
-也可以先运行 `xcodegen generate`，再用 Xcode 打开 `ProxyAppX.xcodeproj` 开发。
+You can also run `xcodegen generate` and work in `ProxyAppX.xcodeproj` with Xcode.
 
-### 4. 首次使用
+### 4. First run
 
-1. 在概览页点击「安装」网络扩展，然后到 **系统设置 › 通用 › 登录项与扩展 › 网络扩展** 里允许 ProxyAppX
-2. 首次启用时，系统会询问是否允许「添加代理配置」，选择允许
-3. 在「代理服务器」中添加服务器，点击「测试」确认可用
-4. 在「应用规则」中添加应用，选择代理服务器
-5. 打开开关
+1. On the Overview page, click Install (安装) for the network extension, then allow ProxyAppX in **System Settings › General › Login Items & Extensions › Network Extensions**
+2. The first time you turn it on, macOS asks to allow adding a proxy configuration; allow it
+3. Under Proxy Servers (代理服务器), add a server and click Test (测试) to make sure it works
+4. Under App Rules (应用规则), add an app and pick the proxy server
+5. Turn on the switch
 
-验证：给 `/usr/bin/curl` 添加一条代理规则，然后
+To verify, add a proxy rule for `/usr/bin/curl`, then run:
 
 ```bash
 curl https://ifconfig.me
 ```
 
-应该返回代理的出口 IP，而浏览器访问同一地址仍显示本机 IP。
+It should print the proxy's exit IP, while a browser visiting the same address still shows your own IP.
 
-## 发布
+## Releasing
 
 ```bash
 scripts/release.sh
 ```
 
-脚本会做 Release 归档，用 Developer ID 导出并提交 Apple 公证，等公证通过后把装订好票据的 App 打包成 `build/release/ProxyAppX-<版本>.zip`，并生成 SHA-256。需要先在 Xcode 中登录开发者账号：导出时会自动生成 Developer ID 描述文件，并用这个账号提交公证。版本号在 `project.yml` 的 `MARKETING_VERSION` 中修改。
+The script makes a Release archive, exports it with Developer ID signing, submits it to Apple for notarization, waits for the ticket, and packages the stapled app as `build/release/ProxyAppX-<version>.zip` with a SHA-256 checksum. Sign in to your developer account in Xcode first: the export creates the Developer ID profiles and notarizes with that account. Bump the version via `MARKETING_VERSION` in `project.yml`.
 
-## 调试
+## Debugging
 
-查看扩展日志：
+Stream the extension's logs:
 
 ```bash
 log stream --predicate 'subsystem == "com.proxyappx.extension"' --level info
 ```
 
-查看系统扩展状态：
+Check the system extension's state:
 
 ```bash
 systemextensionsctl list
 ```
 
-扩展更新后，重新运行 `scripts/build.sh` 即可：脚本每次会使用新的构建号，App 启动时发现自带的扩展与已安装的版本不同，就会自动替换（无需重新批准），并在系统断开会话后自动重连。
+After changing the extension, just run `scripts/build.sh` again. Every build gets a new build number; on launch the app notices that its bundled extension differs from the installed one, replaces it (no re-approval needed), and reconnects once macOS drops the old session.
 
-端到端自测：启动一个会打印每个连接的本地 SOCKS5 测试服务器，在 App 中添加服务器 `127.0.0.1:1080`，再给 `/usr/bin/curl` 加一条代理规则：
+End-to-end check: start a local SOCKS5 test server that prints every connection, add server `127.0.0.1:1080` in the app, and add a proxy rule for `/usr/bin/curl`:
 
 ```bash
 python3 scripts/dev-socks5.py 1080
 ```
 
-然后执行 `curl https://example.com`，测试服务器会打印 `✓ CONNECT example.com:443`；没有规则的应用不会出现在这里。
+Then run `curl https://example.com`; the test server prints `✓ CONNECT example.com:443`. Apps without a rule never show up there.
 
-核心库测试（规则匹配、协议编解码、对本地 SOCKS5 / HTTP 测试服务器的端到端握手、UDP 转发）：
+Core library tests (rule matching, protocol codecs, end-to-end handshakes against in-process SOCKS5 / HTTP test servers, UDP relay):
 
 ```bash
 cd Packages/ProxyAppXCore && swift test
 ```
 
-## 与 Clash / FlClash 等 TUN 工具共存
+## Coexisting with Clash / FlClash and other TUN tools
 
-两者可以同时开启。ProxyAppX 在 socket 层先截获连接；它放行的流量（包括 DNS）会交还给系统网络栈，再照常按路由进入 TUN 工具：
+Both can run at the same time. ProxyAppX intercepts connections at the socket layer first; whatever it lets through (including DNS) goes back to the system network stack and then follows the routing table into the TUN tool as usual:
 
 ```
-应用 → ① ProxyAppX（按应用判定）
-          ├─ 放行（直连 / DNS / 未命中）→ 路由 → utun → ② Clash（DNS 劫持、fake-IP、Clash 规则）
-          ├─ 阻断
-          └─ 代理 → 扩展连接上游代理（上游在本机：直达；上游在远程：默认也会经过 utun）
+App → ① ProxyAppX (decides per app)
+         ├─ pass through (Direct / DNS / no rule) → routing → utun → ② Clash (DNS hijack, fake-IP, Clash rules)
+         ├─ Block
+         └─ Proxy → the extension connects to the upstream proxy
+                    (local upstream: straight there; remote upstream: also goes through utun by default)
 ```
 
-为此，ProxyAppX 做了这些处理（在「设置 › 与其他 VPN / TUN 共存」中可以调整）：
+ProxyAppX handles the cases where the two would interfere. You can adjust these under Settings › Coexisting with other VPN / TUN (设置 › 与其他 VPN / TUN 共存):
 
-- **绑定网卡的连接直连**（默认开）：Clash 内核把自己的连接绑定到物理网卡来绕开 TUN，这类连接一律放行，排除模式下也不会回环
-- **fake-IP 兜底**（默认开）：目标是 198.18.x.x 又拿不到域名、上游在远程时，交给 Clash 处理；有域名时总是把域名交给上游
-- **上游连接绕过其他 VPN / TUN**（默认关）：开启后扩展直接经物理网卡连接远程代理，不会被 Clash 二次代理。也可以改在 Clash 规则里放行扩展：`PROCESS-NAME,com.proxyappx.app.extension,DIRECT`
-- App 会检测接管公网流量的 utun 网卡和 fake-IP 模式，在可能二次代理时给出提示
+- **Bound flows go direct** (on by default): Clash's core binds its own connections to the physical interface to escape its TUN. These flows are always passed through, so exclusion mode cannot create a loop.
+- **Fake-IP fallback** (on by default): when the destination is a 198.18.x.x fake IP, no hostname is available, and the upstream is remote, the connection is handed back to Clash. Whenever a hostname is available, it is always sent upstream.
+- **Upstream avoids other VPN / TUN** (off by default): the extension reaches remote proxies over the physical interface, so Clash does not proxy that traffic a second time. Alternatively, let the extension through in your Clash rules: `PROCESS-NAME,com.proxyappx.app.extension,DIRECT`
+- The app detects a utun interface carrying public traffic and fake-IP mode, and warns you when traffic might be proxied twice.
 
-注意：Clash 开启「系统代理」模式时，遵守系统代理的应用会直连 `127.0.0.1:7890`，ProxyAppX 对这些应用的规则不会生效；建议改用 TUN 模式。
+Note: with Clash in "system proxy" mode, apps that honor the system proxy connect straight to `127.0.0.1:7890`, so ProxyAppX rules for those apps have no effect. Use TUN mode instead.
 
-## 已知限制
+## Known limitations
 
-- **DNS 不经过代理**：系统会把应用的 DNS 查询（53 端口）归属到该应用，为了不影响解析，DNS 一律直连。开启「优先把域名交给代理解析」（默认开启）后，连接本身仍以域名形式交给代理，但本地仍会发生一次 DNS 查询
-- Safari、后台下载等由系统共享进程代发的流量，能否精确归属取决于系统的归因
-- 排除模式下，如果代理客户端（Clash 等）就在本机，必须给它加一条「直连」规则（App 会给出提示）
-- UDP 只有 SOCKS5 服务器支持 UDP ASSOCIATE 时才能转发
+- **DNS does not go through the proxy**: macOS attributes an app's DNS queries (port 53) to the app itself, so to keep name resolution working, DNS always goes direct. With "Send hostnames to the proxy for resolution" (优先把域名交给代理解析, on by default), the connection itself still reaches the proxy by hostname, but a local DNS query still happens.
+- Traffic sent on an app's behalf by shared system processes (Safari, background downloads) is attributed however macOS attributes it, which may not match the app.
+- In exclusion mode, if a local proxy client (Clash and the like) does not bind its own connections to an interface (for example, TUN mode is off), add a Direct rule for it; the app warns you about this.
+- UDP can only be relayed through SOCKS5 servers that support UDP ASSOCIATE.
+- The interface is currently available in Simplified Chinese only.
 
-## 卸载
+## Uninstall
 
-在 App 的「设置 › 网络扩展」中点击「卸载扩展」，然后删除 `/Applications/ProxyAppX.app`。配置文件位于 `~/Library/Application Support/ProxyAppX/`，代理密码保存在登录钥匙串中（服务名 `ProxyAppX.ProxyServer`）。
+In the app, go to Settings › Network Extension (设置 › 网络扩展) and click Uninstall extension (卸载扩展), then delete `/Applications/ProxyAppX.app`. Configuration lives in `~/Library/Application Support/ProxyAppX/`; proxy passwords are stored in the login keychain under the service name `ProxyAppX.ProxyServer`.
