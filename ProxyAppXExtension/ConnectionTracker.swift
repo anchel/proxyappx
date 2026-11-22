@@ -119,6 +119,22 @@ final class ConnectionTracker: @unchecked Sendable {
         if logs.count > logCapacity { logs.removeFirst(logs.count - logCapacity) }
     }
 
+    /// 只写系统日志（log stream 可见），不进入 App 的日志列表。
+    func debug(_ message: String) {
+        logger.debug("\(message, privacy: .public)")
+    }
+
+    private var loggedKeys = Set<String>()
+
+    /// 同一个 key 只记录一次，用于高频但只需提示一次的情况。
+    func logOnce(_ level: LogEntry.Level, key: String, _ message: String) {
+        lock.lock()
+        let inserted = loggedKeys.insert(key).inserted
+        if loggedKeys.count > 1000 { loggedKeys.removeAll() }
+        lock.unlock()
+        if inserted { log(level, message) }
+    }
+
     func clearLogs() {
         lock.lock()
         defer { lock.unlock() }

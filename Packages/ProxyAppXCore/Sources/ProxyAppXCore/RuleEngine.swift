@@ -13,13 +13,18 @@ public struct FlowContext: Sendable, Hashable {
     /// 应用连接时使用的域名（`NEAppProxyFlow.remoteHostname`）。
     public var hostname: String?
     public var transport: Transport
+    /// 应用是否把这个连接绑定到了某块网卡（`NEAppProxyFlow.isBound`）。
+    /// VPN / 代理内核常用这种方式绕开自己的 TUN，接管后会丢失绑定而形成回环。
+    public var isBound: Bool
 
-    public init(signingID: String, executablePath: String?, destination: TargetAddress, hostname: String?, transport: Transport) {
+    public init(signingID: String, executablePath: String?, destination: TargetAddress, hostname: String?,
+                transport: Transport, isBound: Bool = false) {
         self.signingID = signingID
         self.executablePath = executablePath
         self.destination = destination
         self.hostname = hostname
         self.transport = transport
+        self.isBound = isBound
     }
 }
 
@@ -41,6 +46,8 @@ public struct Decision: Sendable, Equatable {
         case systemProcess         // 系统进程（未被规则显式命中时不走默认动作）
         case proxyServer           // 目标就是代理服务器本身，避免二次代理
         case dns                   // DNS 查询（系统会把解析请求归属到发起解析的应用）
+        case boundInterface        // 应用把连接绑定到了网卡（通常是 VPN / 代理内核）
+        case fakeIP                // 目标是 fake-IP 且没有域名，远程代理无法解析，交还给 TUN 工具
 
         public var displayName: String {
             switch self {
@@ -54,6 +61,8 @@ public struct Decision: Sendable, Equatable {
             case .systemProcess: return "系统进程"
             case .proxyServer: return "代理服务器地址"
             case .dns: return "DNS 查询"
+            case .boundInterface: return "已绑定网卡"
+            case .fakeIP: return "fake-IP 交给 TUN"
             }
         }
     }
@@ -144,6 +153,9 @@ public struct RuleEngine: Sendable {
         }
 
         let rule = matchRule(signingID: ctx.signingID, executablePath: ctx.executablePath)
+        if settings.bypassBoundFlows && ctx.isBound {
+            return Decision(verdict: .direct, reason: .boundInterface, rule: rule)
+        }
         if rule == nil, settings.defaultAction != .direct, settings.exemptSystemProcesses,
            Self.isSystemProcess(signingID: ctx.signingID, executablePath: ctx.executablePath) {
             return Decision(verdict: .direct, reason: .systemProcess, rule: nil)
@@ -162,6 +174,9 @@ public struct RuleEngine: Sendable {
                 let v: Decision.Verdict = settings.onProxyFailure == .direct ? .direct : .block
                 return Decision(verdict: v, reason: .missingServer, rule: rule)
             }
+            if needsFakeIPFallback(ctx, server: server) {
+                return Decision(verdict: .direct, reason: .fakeIP, rule: rule)
+            }
             guard ctx.transport == .udp else {
                 return Decision(verdict: .proxy(server), reason: reason, rule: rule)
             }
@@ -177,6 +192,15 @@ public struct RuleEngine: Sendable {
                 return Decision(verdict: .block, reason: .udpUnsupported, rule: rule)
             }
         }
+    }
+
+    /// 目标是 fake-IP、又拿不到域名时，远程代理收到的只能是 198.18.x.x，必然连不上；
+    /// 这时把连接交还给系统，由制造 fake-IP 的 TUN 工具（Clash 等）还原并处理。
+    /// 上游代理在本机时（多半就是那个 TUN 工具自己的端口）它能识别 fake-IP，照常转发。
+    private func needsFakeIPFallback(_ ctx: FlowContext, server: ProxyServer) -> Bool {
+        guard configuration.settings.fakeIPFallback, ctx.destination.isFakeIP else { return false }
+        guard upstreamTarget(for: ctx).isFakeIP else { return false }
+        return !TargetAddress(host: server.host, port: server.port).isLoopback
     }
 
     private func isProxyServerAddress(_ ctx: FlowContext) -> Bool {
@@ -195,8 +219,10 @@ public struct RuleEngine: Sendable {
     }
 
     /// 计算要交给代理的目标地址：开启 preferHostname 且有域名时用域名（远程解析）。
+    /// 目标是 fake-IP 时，只要有域名就一定用域名（fake-IP 对远程代理没有意义）。
     public func upstreamTarget(for ctx: FlowContext) -> TargetAddress {
-        if configuration.settings.preferHostname, let name = ctx.hostname, !name.isEmpty,
+        let useName = configuration.settings.preferHostname || ctx.destination.isFakeIP
+        if useName, let name = ctx.hostname, !name.isEmpty,
            TargetAddress(host: name, port: ctx.destination.port).isIPAddress == false {
             return TargetAddress(host: name, port: ctx.destination.port)
         }

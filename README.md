@@ -119,6 +119,26 @@ python3 scripts/dev-socks5.py 1080
 cd Packages/ProxyAppXCore && swift test
 ```
 
+## 与 Clash / FlClash 等 TUN 工具共存
+
+两者可以同时开启。ProxyAppX 在 socket 层先截获连接；它放行的流量（包括 DNS）会交还给系统网络栈，再照常按路由进入 TUN 工具：
+
+```
+应用 → ① ProxyAppX（按应用判定）
+          ├─ 放行（直连 / DNS / 未命中）→ 路由 → utun → ② Clash（DNS 劫持、fake-IP、Clash 规则）
+          ├─ 阻断
+          └─ 代理 → 扩展连接上游代理（上游在本机：直达；上游在远程：默认也会经过 utun）
+```
+
+为此，ProxyAppX 做了这些处理（在「设置 › 与其他 VPN / TUN 共存」中可以调整）：
+
+- **绑定网卡的连接直连**（默认开）：Clash 内核把自己的连接绑定到物理网卡来绕开 TUN，这类连接一律放行，排除模式下也不会回环
+- **fake-IP 兜底**（默认开）：目标是 198.18.x.x 又拿不到域名、上游在远程时，交给 Clash 处理；有域名时总是把域名交给上游
+- **上游连接绕过其他 VPN / TUN**（默认关）：开启后扩展直接经物理网卡连接远程代理，不会被 Clash 二次代理。也可以改在 Clash 规则里放行扩展：`PROCESS-NAME,com.proxyappx.app.extension,DIRECT`
+- App 会检测接管公网流量的 utun 网卡和 fake-IP 模式，在可能二次代理时给出提示
+
+注意：Clash 开启「系统代理」模式时，遵守系统代理的应用会直连 `127.0.0.1:7890`，ProxyAppX 对这些应用的规则不会生效；建议改用 TUN 模式。
+
 ## 已知限制
 
 - **DNS 不经过代理**：系统会把应用的 DNS 查询（53 端口）归属到该应用，为了不影响解析，DNS 一律直连。开启「优先把域名交给代理解析」（默认开启）后，连接本身仍以域名形式交给代理，但本地仍会发生一次 DNS 查询

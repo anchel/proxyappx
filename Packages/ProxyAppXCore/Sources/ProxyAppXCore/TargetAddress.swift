@@ -67,6 +67,17 @@ public struct TargetAddress: Hashable, Sendable, Codable, CustomStringConvertibl
         }
     }
 
+    /// Clash、Surge 等 TUN 工具 fake-IP 模式使用的地址段 198.18.0.0/15（RFC 2544 基准测试保留段）。
+    public var isFakeIP: Bool {
+        switch kind {
+        case let .ipv4(b): return b[0] == 198 && (b[1] & 0xFE) == 18
+        case let .ipv6(b):
+            if let mapped = IPAddressParser.mappedIPv4(b) { return mapped[0] == 198 && (mapped[1] & 0xFE) == 18 }
+            return false
+        case .domain: return false
+        }
+    }
+
     // MARK: Network.framework 互转
 
     public init?(endpoint: NWEndpoint) {

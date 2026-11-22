@@ -92,8 +92,13 @@ final class ProxyController {
     }
 
     func stop() {
-        userRequestedStop = true
         wantsEnabled = false
+        stopSession()
+    }
+
+    /// 只停止会话，不改变用户记住的开关状态。
+    func stopSession() {
+        userRequestedStop = true
         manager?.connection.stopVPNTunnel()
     }
 

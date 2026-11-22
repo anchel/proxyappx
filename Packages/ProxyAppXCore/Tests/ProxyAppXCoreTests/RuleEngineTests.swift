@@ -6,9 +6,9 @@ final class RuleEngineTests: XCTestCase {
     let http = ProxyServer(name: "H", type: .http, host: "proxy.example.com", port: 8080)
 
     func ctx(_ sid: String, _ path: String? = nil, ip: String = "93.184.216.34", port: UInt16 = 443,
-             host: String? = nil, udp: Bool = false) -> FlowContext {
+             host: String? = nil, udp: Bool = false, bound: Bool = false) -> FlowContext {
         FlowContext(signingID: sid, executablePath: path, destination: TargetAddress(host: ip, port: port),
-                    hostname: host, transport: udp ? .udp : .tcp)
+                    hostname: host, transport: udp ? .udp : .tcp, isBound: bound)
     }
 
     func engine(rules: [AppRule], settings: GeneralSettings = GeneralSettings()) -> RuleEngine {
@@ -123,6 +123,68 @@ final class RuleEngineTests: XCTestCase {
         XCTAssertEqual(e.decide(ctx("com.apple.curl", "/usr/bin/curl", ip: "1.1.1.1", port: 443, udp: true)).verdict, .block)
     }
 
+    // MARK: 与 TUN 工具共存
+
+    func testBoundFlowsBypassEvenInExclusionMode() {
+        // 回归：Clash 内核把连接绑定到 en0 以绕开自己的 TUN，排除模式下若被接管会形成回环。
+        let settings = GeneralSettings(defaultAction: .proxy(serverID: socks.id))
+        let e = engine(rules: [], settings: settings)
+        let d = e.decide(ctx("FlClashXCore-abc", "/Applications/FlClash.app/Contents/MacOS/FlClashCore",
+                             ip: "149.28.218.47", port: 8080, bound: true))
+        XCTAssertEqual(d.verdict, .direct)
+        XCTAssertEqual(d.reason, .boundInterface)
+        XCTAssertEqual(e.decide(ctx("FlClashXCore-abc", ip: "149.28.218.47", port: 8080)).verdict, .proxy(socks))
+
+        // 命中规则的应用也一样，且决策里带上规则便于展示
+        let rule = AppRule(name: "X", bundleID: "com.x", path: "", action: .proxy(serverID: socks.id))
+        let r = engine(rules: [rule]).decide(ctx("com.x", bound: true))
+        XCTAssertEqual(r.reason, .boundInterface)
+        XCTAssertEqual(r.rule?.id, rule.id)
+
+        var off = settings
+        off.bypassBoundFlows = false
+        XCTAssertEqual(engine(rules: [], settings: off).decide(ctx("FlClashXCore-abc", ip: "149.28.218.47", port: 8080, bound: true)).verdict,
+                       .proxy(socks))
+    }
+
+    func testFakeIPWithoutHostnameFallsBackToTUN() {
+        let rule = AppRule(name: "X", bundleID: "com.x", path: "", action: .proxy(serverID: socks.id))
+        let e = engine(rules: [rule])
+        // 远程上游 + fake-IP + 没有域名 → 交还给 TUN
+        let d = e.decide(ctx("com.x", ip: "198.18.0.36", port: 443))
+        XCTAssertEqual(d.verdict, .direct)
+        XCTAssertEqual(d.reason, .fakeIP)
+        XCTAssertEqual(d.rule?.id, rule.id)
+        XCTAssertEqual(e.decide(ctx("com.x", ip: "198.19.255.1", port: 443)).reason, .fakeIP)
+        // 有域名 → 照常代理，并且用域名
+        let named = ctx("com.x", ip: "198.18.0.36", port: 443, host: "www.apple.com")
+        XCTAssertEqual(e.decide(named).verdict, .proxy(socks))
+        XCTAssertEqual(e.upstreamTarget(for: named).host, "www.apple.com")
+        // 非 fake-IP 段不受影响
+        XCTAssertEqual(e.decide(ctx("com.x", ip: "198.20.0.1", port: 443)).verdict, .proxy(socks))
+    }
+
+    func testFakeIPUsesHostnameEvenWhenPreferHostnameIsOff() {
+        let rule = AppRule(name: "X", bundleID: "com.x", path: "", action: .proxy(serverID: socks.id))
+        let e = engine(rules: [rule], settings: GeneralSettings(preferHostname: false))
+        let named = ctx("com.x", ip: "198.18.0.36", port: 443, host: "example.com")
+        XCTAssertEqual(e.upstreamTarget(for: named).host, "example.com")
+        XCTAssertEqual(e.upstreamTarget(for: ctx("com.x", ip: "1.2.3.4", host: "example.com")).host, "1.2.3.4")
+    }
+
+    func testFakeIPStillProxiedToLocalUpstreamOrWhenDisabled() {
+        let local = ProxyServer(name: "clash", type: .socks5, host: "127.0.0.1", port: 7890, supportsUDP: true)
+        let rule = AppRule(name: "X", bundleID: "com.x", path: "", action: .proxy(serverID: local.id), udpPolicy: .proxy)
+        let e = RuleEngine(configuration: ProxyAppXConfig(servers: [local], rules: [rule]))
+        XCTAssertEqual(e.decide(ctx("com.x", ip: "198.18.0.36", port: 443)).verdict, .proxy(local))
+        XCTAssertEqual(e.decide(ctx("com.x", ip: "198.18.0.36", port: 443, udp: true)).verdict, .proxy(local))
+
+        let remoteRule = AppRule(name: "X", bundleID: "com.x", path: "", action: .proxy(serverID: socks.id), udpPolicy: .proxy)
+        XCTAssertEqual(engine(rules: [remoteRule]).decide(ctx("com.x", ip: "198.18.0.36", port: 443, udp: true)).reason, .fakeIP)
+        let off = engine(rules: [remoteRule], settings: GeneralSettings(fakeIPFallback: false))
+        XCTAssertEqual(off.decide(ctx("com.x", ip: "198.18.0.36", port: 443)).verdict, .proxy(socks))
+    }
+
     func testConnectionToProxyServerItselfIsDirect() {
         let rule = AppRule(name: "X", bundleID: "com.x", path: "", action: .proxy(serverID: socks.id))
         let e = engine(rules: [rule], settings: GeneralSettings(bypassLAN: false))
@@ -196,6 +258,13 @@ final class ModelsTests: XCTestCase {
         XCTAssertNil(redacted.servers[0].password)
         let text = String(decoding: try redacted.encoded(), as: UTF8.self)
         XCTAssertFalse(text.contains("secret"))
+    }
+
+    func testNewCoexistenceSettingsDefaults() throws {
+        let s = try JSONDecoder().decode(GeneralSettings.self, from: Data("{}".utf8))
+        XCTAssertTrue(s.bypassBoundFlows)
+        XCTAssertTrue(s.fakeIPFallback)
+        XCTAssertFalse(s.upstreamAvoidTunnels)
     }
 
     func testDecodingToleratesMissingFields() throws {

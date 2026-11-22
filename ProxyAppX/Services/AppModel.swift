@@ -11,6 +11,10 @@ final class AppModel {
     let extensionManager = ExtensionManager()
     let controller: ProxyController
     let monitor: StatusMonitor
+    let network = NetworkEnvironment()
+
+    /// Clash 类工具里放行本扩展出站流量的规则。
+    static let clashDirectRule = "PROCESS-NAME,com.proxyappx.app.extension,DIRECT"
 
     var launchAtLogin: Bool = SMAppService.mainApp.status == .enabled {
         didSet { updateLoginItem() }
@@ -41,8 +45,13 @@ final class AppModel {
         await controller.load()
         // 代理可能在 App 未运行时一直开着；把当前配置同步给系统和正在运行的扩展。
         await controller.apply(store.configuration)
+        // 以 App 的开关为准：用户上次关闭了代理，但系统里的会话还开着时，把它停掉。
+        if !controller.wantsEnabled && (controller.isRunning || controller.status == .connecting) {
+            controller.stopSession()
+        }
         extensionManager.refresh()
         monitor.start()
+        network.start()
     }
 
     var isRunning: Bool { controller.isRunning }
@@ -90,7 +99,34 @@ final class AppModel {
         if !missing.isEmpty {
             out.append("有 \(missing.count) 条规则引用的代理服务器已不存在。")
         }
+        out.append(contentsOf: tunnelWarnings)
         return out
+    }
+
+    /// 检测到其他 VPN / TUN 工具时的共存提示。
+    var tunnelWarnings: [String] {
+        guard let tunnel = network.tunnel else { return [] }
+        let settings = store.configuration.settings
+        var out: [String] = []
+        if !settings.upstreamAvoidTunnels && !remoteServersInUse.isEmpty {
+            let names = remoteServersInUse.map(\.name).joined(separator: "、")
+            out.append("检测到 \(tunnel.summary)。ProxyAppX 连接远程代理（\(names)）的流量会再经过它，可能被它二次代理。可在「设置 › 与其他 VPN / TUN 共存」中开启「上游连接绕过其他 VPN / TUN」，或在 Clash 规则中加入 \(Self.clashDirectRule)。")
+        }
+        if tunnel.isFakeIP && !settings.preferHostname {
+            out.append("\(tunnel.interface) 处于 fake-IP 模式，建议在设置中开启「优先把域名交给代理解析」，否则远程代理收到的是 198.18.x.x 这类无效地址。")
+        }
+        if !settings.bypassBoundFlows && settings.defaultAction.isProxy {
+            out.append("已关闭「绑定网卡的连接直连」且默认动作为代理，\(tunnel.interface) 背后的代理内核可能被接管，形成回环。")
+        }
+        return out
+    }
+
+    /// 规则或默认动作正在使用的、不在本机的代理服务器。
+    private var remoteServersInUse: [ProxyServer] {
+        let cfg = store.configuration
+        var ids = Set(cfg.rules.filter(\.enabled).compactMap(\.action.serverID))
+        if let d = cfg.settings.defaultAction.serverID { ids.insert(d) }
+        return cfg.servers.filter { ids.contains($0.id) && !TargetAddress(host: $0.host, port: $0.port).isLoopback }
     }
 
     private func updateLoginItem() {

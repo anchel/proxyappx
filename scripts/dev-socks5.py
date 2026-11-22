@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """开发用的最小 SOCKS5 服务器（只支持无认证 CONNECT），会打印每个经过它的连接。
 
-用法：python3 scripts/dev-socks5.py [端口，默认 1080]
+用法：python3 scripts/dev-socks5.py [端口，默认 1080] [监听地址，默认 127.0.0.1]
 
 在 ProxyAppX 里添加服务器 127.0.0.1:1080（SOCKS5），给某个应用加代理规则，
 就能在这里看到该应用的连接，用来验证分流是否生效。
@@ -79,11 +79,12 @@ def handle(client, addr):
 
 def main():
     port = int(sys.argv[1]) if len(sys.argv) > 1 else 1080
+    host = sys.argv[2] if len(sys.argv) > 2 else "127.0.0.1"
     srv = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     srv.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    srv.bind(("127.0.0.1", port))
+    srv.bind((host, port))
     srv.listen(128)
-    log(f"SOCKS5 测试服务器监听 127.0.0.1:{port}")
+    log(f"SOCKS5 测试服务器监听 {host}:{port}")
     while True:
         c, a = srv.accept()
         threading.Thread(target=handle, args=(c, a), daemon=True).start()

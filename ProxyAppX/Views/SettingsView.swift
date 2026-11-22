@@ -78,6 +78,38 @@ struct SettingsView: View {
                 }
             }
 
+            Section {
+                LabeledContent("检测结果") {
+                    Text(model.network.tunnel?.summary ?? "未检测到接管公网流量的 VPN / TUN")
+                        .foregroundStyle(model.network.tunnel == nil ? Color.secondary : Color.orange)
+                        .multilineTextAlignment(.trailing)
+                }
+                Toggle("绑定到网卡的连接直连（推荐）", isOn: binding(\.bypassBoundFlows))
+                Text("VPN / 代理内核（如 Clash 内核）会把自己的连接绑定到物理网卡来绕开 TUN；这类连接被接管后会丢失绑定，形成回环。")
+                    .font(.caption).foregroundStyle(.secondary)
+                Toggle("fake-IP 无域名时交给 TUN 处理（推荐）", isOn: binding(\.fakeIPFallback))
+                Text("目标是 198.18.0.0/15 的 fake-IP、又拿不到域名时，远程代理无法连接；这时把连接交还给制造 fake-IP 的工具处理。上游代理在本机时不受影响。")
+                    .font(.caption).foregroundStyle(.secondary)
+                Toggle("上游连接绕过其他 VPN / TUN", isOn: binding(\.upstreamAvoidTunnels))
+                Text("开启后，扩展直接经物理网卡连接代理服务器，不会再被 Clash 等工具处理一次。如果代理服务器只能通过公司 VPN 访问，请不要开启。")
+                    .font(.caption).foregroundStyle(.secondary)
+                HStack {
+                    Text("也可以在 Clash 规则中放行本扩展：")
+                        .font(.caption).foregroundStyle(.secondary)
+                    Text(AppModel.clashDirectRule)
+                        .font(.caption.monospaced())
+                        .textSelection(.enabled)
+                    Spacer()
+                    Button("复制") {
+                        NSPasteboard.general.clearContents()
+                        NSPasteboard.general.setString(AppModel.clashDirectRule, forType: .string)
+                    }
+                    .controlSize(.small)
+                }
+            } header: {
+                Text("与其他 VPN / TUN 共存")
+            }
+
             Section("通用") {
                 Toggle("登录时启动 ProxyAppX", isOn: $model.launchAtLogin)
                 if let e = model.loginItemError {

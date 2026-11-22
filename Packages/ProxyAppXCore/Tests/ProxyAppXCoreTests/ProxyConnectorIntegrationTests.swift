@@ -147,6 +147,22 @@ final class ProxyConnectorIntegrationTests: XCTestCase {
         }
     }
 
+    func testAvoidTunnelsProhibitsTunnelInterfaces() async throws {
+        let params = AsyncConnection.tcpParameters(connectTimeout: 5, avoidTunnels: true)
+        XCTAssertEqual(params.prohibitedInterfaceTypes, [.other])
+        XCTAssertNil(AsyncConnection.tcpParameters(connectTimeout: 5).prohibitedInterfaceTypes)
+
+        // 环回网卡不属于 .other，经本机代理照常可用
+        let s = try MiniSOCKS5Server()
+        let port = try await s.start()
+        defer { s.stop() }
+        let server = ProxyServer(name: "t", type: .socks5, host: "127.0.0.1", port: port)
+        let c = try await ProxyConnector.connect(to: echoTarget, via: .proxy(server), timeout: 5, avoidTunnels: true)
+        defer { c.cancel() }
+        let reply = try await roundTrip(c, "no tunnels")
+        XCTAssertEqual(reply, "no tunnels")
+    }
+
     func testHandshakeTimeout() async throws {
         let silent = try SilentServer()
         let port = try await silent.start()

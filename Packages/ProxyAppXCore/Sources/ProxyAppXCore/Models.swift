@@ -188,6 +188,12 @@ public struct GeneralSettings: Codable, Hashable, Sendable {
     public var connectTimeout: Double
     /// 默认动作不是直连时，未被规则显式命中的系统进程（Apple 签名、位于 /System、/usr 等）仍然直连。
     public var exemptSystemProcesses: Bool
+    /// 应用绑定到网卡的连接（VPN / 代理内核用来绕开 TUN）一律直连，避免回环。
+    public var bypassBoundFlows: Bool
+    /// 目标是 fake-IP 且拿不到域名、上游代理又不在本机时，交还给 TUN 工具处理。
+    public var fakeIPFallback: Bool
+    /// 扩展连接上游代理时不经过其他 VPN / TUN 网卡（utun 等），直接走物理网卡。
+    public var upstreamAvoidTunnels: Bool
 
     public init(
         defaultAction: RuleAction = .direct,
@@ -196,7 +202,10 @@ public struct GeneralSettings: Codable, Hashable, Sendable {
         preferHostname: Bool = true,
         bypassLAN: Bool = true,
         connectTimeout: Double = 10,
-        exemptSystemProcesses: Bool = true
+        exemptSystemProcesses: Bool = true,
+        bypassBoundFlows: Bool = true,
+        fakeIPFallback: Bool = true,
+        upstreamAvoidTunnels: Bool = false
     ) {
         self.defaultAction = defaultAction
         self.defaultUDPPolicy = defaultUDPPolicy
@@ -205,10 +214,14 @@ public struct GeneralSettings: Codable, Hashable, Sendable {
         self.bypassLAN = bypassLAN
         self.connectTimeout = connectTimeout
         self.exemptSystemProcesses = exemptSystemProcesses
+        self.bypassBoundFlows = bypassBoundFlows
+        self.fakeIPFallback = fakeIPFallback
+        self.upstreamAvoidTunnels = upstreamAvoidTunnels
     }
 
     enum CodingKeys: String, CodingKey {
         case defaultAction, defaultUDPPolicy, onProxyFailure, preferHostname, bypassLAN, connectTimeout, exemptSystemProcesses
+        case bypassBoundFlows, fakeIPFallback, upstreamAvoidTunnels
     }
 
     public init(from decoder: Decoder) throws {
@@ -221,6 +234,9 @@ public struct GeneralSettings: Codable, Hashable, Sendable {
         bypassLAN = try c.decodeIfPresent(Bool.self, forKey: .bypassLAN) ?? d.bypassLAN
         connectTimeout = try c.decodeIfPresent(Double.self, forKey: .connectTimeout) ?? d.connectTimeout
         exemptSystemProcesses = try c.decodeIfPresent(Bool.self, forKey: .exemptSystemProcesses) ?? d.exemptSystemProcesses
+        bypassBoundFlows = try c.decodeIfPresent(Bool.self, forKey: .bypassBoundFlows) ?? d.bypassBoundFlows
+        fakeIPFallback = try c.decodeIfPresent(Bool.self, forKey: .fakeIPFallback) ?? d.fakeIPFallback
+        upstreamAvoidTunnels = try c.decodeIfPresent(Bool.self, forKey: .upstreamAvoidTunnels) ?? d.upstreamAvoidTunnels
     }
 }
 

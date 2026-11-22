@@ -125,7 +125,8 @@ final class TransparentProxyProvider: NETransparentProxyProvider, NEAppProxyUDPF
                 directTarget: destination,
                 upstream: .proxy(server),
                 failurePolicy: settings.onProxyFailure,
-                timeout: settings.connectTimeout
+                timeout: settings.connectTimeout,
+                avoidTunnels: settings.upstreamAvoidTunnels
             )
             TCPRelay(flow: tcp, id: id, plan: plan, tracker: tracker).start()
             return true
@@ -151,8 +152,9 @@ final class TransparentProxyProvider: NETransparentProxyProvider, NEAppProxyUDPF
 
         case let .proxy(server):
             let id = tracker.begin(snapshot(ctx, process, decision, verdict: .proxy, server: server))
-            UDPRelay(flow: flow, id: id, server: server, timeout: engine.configuration.settings.connectTimeout,
-                     tracker: tracker).start()
+            let settings = engine.configuration.settings
+            UDPRelay(flow: flow, id: id, server: server, timeout: settings.connectTimeout,
+                     avoidTunnels: settings.upstreamAvoidTunnels, tracker: tracker).start()
             return true
         }
     }
@@ -166,7 +168,7 @@ final class TransparentProxyProvider: NETransparentProxyProvider, NEAppProxyUDPF
         let process = resolver.resolve(auditToken: meta.sourceAppAuditToken, signingID: signingID)
         let hostname = flow.remoteHostname.flatMap { $0.isEmpty ? nil : $0 }
         let ctx = FlowContext(signingID: signingID, executablePath: process.path, destination: destination,
-                              hostname: hostname, transport: transport)
+                              hostname: hostname, transport: transport, isBound: flow.isBound)
         return (ctx, process)
     }
 
@@ -174,7 +176,15 @@ final class TransparentProxyProvider: NETransparentProxyProvider, NEAppProxyUDPF
         switch decision.reason {
         case .rule, .udpPolicy, .missingServer:
             tracker.recordImmediate(snapshot(ctx, process, decision, verdict: .direct))
-        case .defaultAction, .systemProcess:
+        case .fakeIP:
+            tracker.recordImmediate(snapshot(ctx, process, decision, verdict: .direct))
+            tracker.logOnce(.warning, key: "fakeip:\(ctx.signingID)",
+                            "\(process.name) 连接 fake-IP \(ctx.destination) 时没有域名，远程代理无法解析，已交给 TUN 工具处理（此提示每个应用只显示一次）")
+        case .boundInterface where decision.rule != nil:
+            tracker.recordImmediate(snapshot(ctx, process, decision, verdict: .direct))
+            tracker.logOnce(.info, key: "bound:\(ctx.signingID)",
+                            "\(process.name) 的连接绑定了网卡，按「绑定网卡的连接直连」放行（此提示每个应用只显示一次）")
+        case .defaultAction, .systemProcess, .boundInterface:
             tracker.recordUnmatched(
                 signingID: ctx.signingID, name: process.name, path: process.path,
                 isSystem: RuleEngine.isSystemProcess(signingID: ctx.signingID, executablePath: ctx.executablePath),

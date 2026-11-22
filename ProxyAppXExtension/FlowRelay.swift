@@ -84,6 +84,8 @@ final class TCPRelay: @unchecked Sendable {
         let upstream: Upstream
         let failurePolicy: FailurePolicy
         let timeout: TimeInterval
+        /// 连接上游代理时绕过其他 VPN / TUN 网卡（回落直连不受影响，仍按系统路由走）。
+        let avoidTunnels: Bool
     }
 
     private let flow: NEAppProxyTCPFlow
@@ -142,7 +144,11 @@ final class TCPRelay: @unchecked Sendable {
             return try await ProxyConnector.connect(to: plan.directTarget, via: .direct, timeout: plan.timeout)
         case let .proxy(server):
             do {
-                return try await ProxyConnector.connect(to: plan.proxyTarget, via: .proxy(server), timeout: plan.timeout)
+                let conn = try await ProxyConnector.connect(to: plan.proxyTarget, via: .proxy(server), timeout: plan.timeout,
+                                                            avoidTunnels: plan.avoidTunnels)
+                let via = conn.connection.currentPath?.availableInterfaces.first?.name ?? "?"
+                tracker.debug("#\(id) \(plan.proxyTarget) 经 \(server.name)（网卡 \(via)）")
+                return conn
             } catch {
                 let reason = (error as? LocalizedError)?.errorDescription ?? "\(error)"
                 guard plan.failurePolicy == .direct else {
@@ -200,14 +206,17 @@ final class UDPRelay: @unchecked Sendable {
     private let id: UInt64
     private let server: ProxyServer
     private let timeout: TimeInterval
+    private let avoidTunnels: Bool
     private let tracker: ConnectionTracker
     private let firstError = FirstError()
 
-    init(flow: NEAppProxyUDPFlow, id: UInt64, server: ProxyServer, timeout: TimeInterval, tracker: ConnectionTracker) {
+    init(flow: NEAppProxyUDPFlow, id: UInt64, server: ProxyServer, timeout: TimeInterval, avoidTunnels: Bool,
+         tracker: ConnectionTracker) {
         self.flow = flow
         self.id = id
         self.server = server
         self.timeout = timeout
+        self.avoidTunnels = avoidTunnels
         self.tracker = tracker
     }
 
@@ -220,7 +229,7 @@ final class UDPRelay: @unchecked Sendable {
     private func run() async {
         let assoc: SOCKS5UDPAssociation
         do {
-            assoc = try await SOCKS5UDPAssociation.open(server: server, timeout: timeout)
+            assoc = try await SOCKS5UDPAssociation.open(server: server, timeout: timeout, avoidTunnels: avoidTunnels)
         } catch {
             firstError.set(error)
             tracker.log(.warning, "UDP 关联 \(server.name) 失败：\((error as? LocalizedError)?.errorDescription ?? "\(error)")")

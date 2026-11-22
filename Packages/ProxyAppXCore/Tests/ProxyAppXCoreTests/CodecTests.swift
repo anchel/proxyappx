@@ -25,6 +25,15 @@ final class TargetAddressTests: XCTestCase {
         XCTAssertTrue(TargetAddress(host: "::ffff:127.0.0.1", port: 0).isLoopback)
     }
 
+    func testFakeIPRange() {
+        for ip in ["198.18.0.1", "198.18.255.255", "198.19.0.36", "::ffff:198.18.0.5"] {
+            XCTAssertTrue(TargetAddress(host: ip, port: 0).isFakeIP, ip)
+        }
+        for ip in ["198.17.255.255", "198.20.0.1", "10.0.0.1", "example.com"] {
+            XCTAssertFalse(TargetAddress(host: ip, port: 0).isFakeIP, ip)
+        }
+    }
+
     func testIPv6Formatting() {
         let b = IPAddressParser.ipv6Bytes("2001:0db8:0000:0000:0000:0000:0000:0001")!
         XCTAssertEqual(IPAddressParser.format(ipv6: b), "2001:db8::1")

@@ -59,6 +59,7 @@ public enum ProxyConnector {
         to target: TargetAddress,
         via upstream: Upstream,
         timeout: TimeInterval,
+        avoidTunnels: Bool = false,
         queue: DispatchQueue? = nil
     ) async throws -> AsyncConnection {
         let endpoint: NWEndpoint
@@ -71,7 +72,7 @@ public enum ProxyConnector {
 
         let conn = AsyncConnection(
             endpoint: endpoint,
-            parameters: AsyncConnection.tcpParameters(connectTimeout: timeout),
+            parameters: AsyncConnection.tcpParameters(connectTimeout: timeout, avoidTunnels: avoidTunnels),
             queue: queue
         )
         let deadline = Deadline(seconds: timeout) { conn.cancel() }
@@ -155,11 +156,12 @@ public final class SOCKS5UDPAssociation: @unchecked Sendable {
         self.relayAddress = relayAddress
     }
 
-    public static func open(server: ProxyServer, timeout: TimeInterval, queue: DispatchQueue? = nil) async throws -> SOCKS5UDPAssociation {
+    public static func open(server: ProxyServer, timeout: TimeInterval, avoidTunnels: Bool = false,
+                            queue: DispatchQueue? = nil) async throws -> SOCKS5UDPAssociation {
         guard server.type == .socks5 else { throw ProxyError.unsupported("HTTP 代理不支持 UDP") }
         let control = AsyncConnection(
             endpoint: TargetAddress(host: server.host, port: server.port).nwEndpoint,
-            parameters: AsyncConnection.tcpParameters(connectTimeout: timeout),
+            parameters: AsyncConnection.tcpParameters(connectTimeout: timeout, avoidTunnels: avoidTunnels),
             queue: queue
         )
         let relayBox = Box<AsyncDatagramConnection>()
@@ -176,7 +178,7 @@ public final class SOCKS5UDPAssociation: @unchecked Sendable {
             // 服务器返回未指定地址时，中继就在代理服务器本身。
             let unspecified = bnd.host == "0.0.0.0" || bnd.host == "::"
             let relayAddr = unspecified ? TargetAddress(host: server.host, port: bnd.port) : bnd
-            let r = AsyncDatagramConnection(endpoint: relayAddr.nwEndpoint, queue: queue)
+            let r = AsyncDatagramConnection(endpoint: relayAddr.nwEndpoint, queue: queue, avoidTunnels: avoidTunnels)
             relayBox.value = r
             try await r.start()
             guard deadline.disarm() else { throw ProxyError.timeout }

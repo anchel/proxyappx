@@ -48,7 +48,8 @@ public final class AsyncConnection: @unchecked Sendable {
         self.init(connection: NWConnection(to: endpoint, using: parameters), queue: q)
     }
 
-    public static func tcpParameters(connectTimeout: TimeInterval) -> NWParameters {
+    /// - Parameter avoidTunnels: 为 true 时禁止使用 utun 等「其他」类型网卡，强制走物理网卡（绕过其他 VPN / TUN）。
+    public static func tcpParameters(connectTimeout: TimeInterval, avoidTunnels: Bool = false) -> NWParameters {
         let tcp = NWProtocolTCP.Options()
         tcp.noDelay = true
         tcp.connectionTimeout = max(1, Int(connectTimeout.rounded(.up)))
@@ -56,6 +57,7 @@ public final class AsyncConnection: @unchecked Sendable {
         tcp.keepaliveIdle = 60
         let params = NWParameters(tls: nil, tcp: tcp)
         params.preferNoProxies = true
+        if avoidTunnels { params.prohibitedInterfaceTypes = [.other] }
         return params
     }
 
@@ -183,9 +185,10 @@ public final class AsyncDatagramConnection: @unchecked Sendable {
     public let connection: NWConnection
     public let queue: DispatchQueue
 
-    public init(endpoint: NWEndpoint, queue: DispatchQueue? = nil) {
+    public init(endpoint: NWEndpoint, queue: DispatchQueue? = nil, avoidTunnels: Bool = false) {
         let params = NWParameters.udp
         params.preferNoProxies = true
+        if avoidTunnels { params.prohibitedInterfaceTypes = [.other] }
         self.queue = queue ?? DispatchQueue(label: "proxyappx.udp", qos: .userInitiated)
         self.connection = NWConnection(to: endpoint, using: params)
     }
