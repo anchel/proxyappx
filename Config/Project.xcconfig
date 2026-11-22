@@ -1,0 +1,16 @@
+// 项目级默认值。个人签名配置写在 Config/Signing.xcconfig（不入库），会覆盖这里的值。
+
+// Bundle ID 前缀：App = $(BUNDLE_ID_PREFIX).app，扩展 = $(BUNDLE_ID_PREFIX).app.extension，
+// App Group = $(TeamIdentifierPrefix)$(BUNDLE_ID_PREFIX)
+BUNDLE_ID_PREFIX = com.proxyappx
+
+// Network Extension entitlement 的取值：
+//   开发签名（Apple Development）          → app-proxy-provider
+//   Developer ID 手动签名（直接分发）        → app-proxy-provider-systemextension
+// 用 Xcode Archive → Developer ID 导出时，Xcode 会自动转换，保持 app-proxy-provider 即可。
+NE_PROVIDER_ENTITLEMENT = app-proxy-provider
+
+CODE_SIGN_STYLE = Automatic
+DEVELOPMENT_TEAM =
+
+#include? "Signing.xcconfig"
