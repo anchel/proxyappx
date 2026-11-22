@@ -128,6 +128,10 @@ public struct RuleEngine: Sendable {
         return best?.rule
     }
 
+    public func matches(_ app: UnmatchedApp) -> Bool {
+        matchRule(signingID: app.signingID, executablePath: app.executablePath) != nil
+    }
+
     // MARK: 决策
 
     public func decide(_ ctx: FlowContext) -> Decision {

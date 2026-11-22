@@ -27,7 +27,8 @@ final class ProcessResolver: @unchecked Sendable {
         }
         lock.unlock()
 
-        let path = Self.codePath(auditToken: token) ?? Self.pidPath(auditToken: token)
+        let rawPath = Self.codePath(auditToken: token) ?? Self.pidPath(auditToken: token)
+        let path = rawPath.map { URL(fileURLWithPath: $0).resolvingSymlinksInPath().standardizedFileURL.path }
         let info = Info(path: path, name: path.map(Self.displayName(forPath:)) ?? Self.fallbackName(signingID))
 
         lock.lock()

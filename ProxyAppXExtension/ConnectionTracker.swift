@@ -34,6 +34,9 @@ final class ConnectionTracker: @unchecked Sendable {
         s.id = id
         active[id] = s
         totals.proxied += 1
+        if s.ruleName != nil, !s.signingID.isEmpty {
+            unmatched.removeValue(forKey: s.signingID)
+        }
         return id
     }
 
@@ -48,6 +51,9 @@ final class ConnectionTracker: @unchecked Sendable {
         switch s.verdict {
         case .block: totals.blocked += 1
         default: totals.direct += 1
+        }
+        if s.ruleName != nil, !s.signingID.isEmpty {
+            unmatched.removeValue(forKey: s.signingID)
         }
         appendRecent(s)
     }
@@ -135,6 +141,13 @@ final class ConnectionTracker: @unchecked Sendable {
         if inserted { log(level, message) }
     }
 
+    /// 配置更新后，移除已经命中新规则的未匹配记录。
+    func pruneUnmatched(using engine: RuleEngine) {
+        lock.lock()
+        defer { lock.unlock() }
+        unmatched = unmatched.filter { !engine.matches($0.value) }
+    }
+
     func clearLogs() {
         lock.lock()
         defer { lock.unlock() }
@@ -145,15 +158,16 @@ final class ConnectionTracker: @unchecked Sendable {
 
     // MARK: 快照
 
-    func snapshot(logsAfter: UInt64?, ruleCount: Int) -> StatusSnapshot {
+    func snapshot(logsAfter: UInt64?, engine: RuleEngine) -> StatusSnapshot {
         lock.lock()
         defer { lock.unlock() }
+        unmatched = unmatched.filter { !engine.matches($0.value) }
         let newLogs = logsAfter.map { after in logs.filter { $0.id > after } } ?? logs
         let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "?"
         return StatusSnapshot(
             startedAt: startedAt,
             extensionVersion: version,
-            ruleCount: ruleCount,
+            ruleCount: engine.configuration.rules.count,
             active: active.values.sorted { $0.startedAt > $1.startedAt },
             recent: recent.reversed(),
             unmatched: unmatched.values.sorted { $0.lastSeen > $1.lastSeen },

@@ -35,6 +35,7 @@ final class TransparentProxyProvider: NETransparentProxyProvider, NEAppProxyUDPF
     override func startProxy(options: [String: Any]? = nil, completionHandler: @escaping (Error?) -> Void) {
         let configuration = loadConfiguration(options: options)
         store.update(configuration)
+        tracker.pruneUnmatched(using: store.engine)
         let servers = configuration.servers.count, enabled = configuration.rules.filter(\.enabled).count
         tracker.log(.info, L10n.t("Extension started: \(servers) proxies, \(enabled) enabled rules",
                                   "扩展启动：\(servers) 个代理，\(enabled) 条启用的规则"))
@@ -88,11 +89,12 @@ final class TransparentProxyProvider: NETransparentProxyProvider, NEAppProxyUDPF
             switch try IPCRequest.decode(messageData) {
             case let .updateConfiguration(configuration):
                 store.update(configuration)
+                tracker.pruneUnmatched(using: store.engine)
                 let enabled = configuration.rules.filter(\.enabled).count
                 tracker.log(.info, L10n.t("Configuration updated: \(enabled) enabled rules", "配置已更新：\(enabled) 条启用的规则"))
                 response = .ok
             case let .status(logsAfter):
-                response = .status(tracker.snapshot(logsAfter: logsAfter, ruleCount: store.engine.configuration.rules.count))
+                response = .status(tracker.snapshot(logsAfter: logsAfter, engine: store.engine))
             case .clearLogs:
                 tracker.clearLogs()
                 response = .ok

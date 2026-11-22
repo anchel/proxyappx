@@ -78,6 +78,26 @@ final class RuleEngineTests: XCTestCase {
         XCTAssertEqual(engine(rules: [rule]).decide(ctx("com.x")).verdict, .direct)
     }
 
+    func testMatchesUnmatchedAppForPruning() {
+        let rule = AppRule(name: "Slack", bundleID: "com.tinyspeck.slackmacgap", path: "/Applications/Slack.app",
+                           action: .proxy(serverID: socks.id))
+        let e = engine(rules: [rule])
+        func unmatched(_ sid: String, _ path: String?) -> UnmatchedApp {
+            UnmatchedApp(signingID: sid, appName: "Slack", executablePath: path, isSystem: false,
+                         flowCount: 1, lastTarget: "example.com:443", lastSeen: Date())
+        }
+        // 主程序、bundle 内 helper、签名前缀 helper 都应被识别为已命中规则
+        XCTAssertTrue(e.matches(unmatched("com.tinyspeck.slackmacgap", "/Applications/Slack.app")))
+        XCTAssertTrue(e.matches(unmatched("org.other.helper", "/Applications/Slack.app/Contents/Frameworks/Slack Helper.app")))
+        XCTAssertTrue(e.matches(unmatched("com.tinyspeck.slackmacgap.ShipIt", nil)))
+        // 位于 bundle 外且签名前缀无关的进程仍保持未匹配
+        XCTAssertFalse(e.matches(unmatched("com.example.updater", "/Library/Application Support/Slack/updater")))
+        // 禁用的规则不应过滤未匹配项
+        var disabled = rule
+        disabled.enabled = false
+        XCTAssertFalse(engine(rules: [disabled]).matches(unmatched("com.tinyspeck.slackmacgap", "/Applications/Slack.app")))
+    }
+
     func testDefaultActionExclusionMode() {
         let settings = GeneralSettings(defaultAction: .proxy(serverID: socks.id))
         let exclude = AppRule(name: "WeChat", bundleID: "com.tencent.xinWeChat", path: "", action: .direct)
