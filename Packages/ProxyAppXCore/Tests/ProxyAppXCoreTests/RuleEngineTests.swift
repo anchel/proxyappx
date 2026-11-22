@@ -108,22 +108,61 @@ final class RuleEngineTests: XCTestCase {
         XCTAssertEqual(d.verdict, .direct)
     }
 
-    func testDNSQueriesAttributedToAppAreNeverBlocked() {
+    func testDNSQueriesGoDirectWhenAppDNSProxyingIsDisabled() {
         // 回归：UDP 策略为阻断时，系统归属到该应用的 DNS 查询曾被阻断，导致应用无法解析域名。
         let rule = AppRule(name: "curl", bundleID: "com.apple.curl", path: "/usr/bin/curl",
                            action: .proxy(serverID: socks.id), udpPolicy: .block)
-        let e = engine(rules: [rule])
+        let settings = GeneralSettings(proxyAppDNS: false)
+        let e = engine(rules: [rule], settings: settings)
         let udp = e.decide(ctx("com.apple.curl", "/usr/bin/curl", ip: "223.5.5.5", port: 53, udp: true))
         XCTAssertEqual(udp.verdict, .direct)
         XCTAssertEqual(udp.reason, .dns)
         XCTAssertEqual(e.decide(ctx("com.apple.curl", "/usr/bin/curl", ip: "223.5.5.5", port: 53)).reason, .dns)
-        let blocked = engine(rules: [AppRule(name: "x", bundleID: "com.x", path: "", action: .block)])
+        let blocked = engine(rules: [AppRule(name: "x", bundleID: "com.x", path: "", action: .block)], settings: settings)
         XCTAssertEqual(blocked.decide(ctx("com.x", ip: "8.8.8.8", port: 53, udp: true)).verdict, .direct)
         // 其他 UDP 仍按策略阻断
         XCTAssertEqual(e.decide(ctx("com.apple.curl", "/usr/bin/curl", ip: "1.1.1.1", port: 443, udp: true)).verdict, .block)
     }
 
     // MARK: 与 TUN 工具共存
+
+    func testProxyAppDNSUsesAppProxyEvenForLANResolverAndBlockedUDP() {
+        let settings = GeneralSettings(defaultAction: .proxy(serverID: socks.id))
+        let rule = AppRule(name: "Browser", bundleID: "test.browser", path: "", action: .proxy(serverID: http.id))
+        let direct = AppRule(name: "Direct", bundleID: "test.direct", path: "", action: .direct)
+        let e = engine(rules: [rule, direct], settings: settings)
+        for udp in [false, true] {
+            let d = e.decide(ctx("test.browser.helper", ip: "192.168.1.1", port: 53, udp: udp))
+            XCTAssertEqual(d, Decision(verdict: .proxy(http), reason: .dns, rule: rule))
+            XCTAssertEqual(e.decide(ctx("test.other", ip: "192.168.1.1", port: 53, udp: udp)).verdict, .proxy(socks))
+            XCTAssertEqual(e.decide(ctx("test.direct", ip: "192.168.1.1", port: 53, udp: udp)).verdict, .direct)
+        }
+        XCTAssertEqual(e.decide(ctx("test.browser", ip: "192.168.1.1", port: 80)).reason, .localNetwork)
+        XCTAssertEqual(e.decide(ctx("test.browser", udp: true)).reason, .udpPolicy)
+    }
+
+    func testProxyAppDNSKeepsExemptFlowsDirect() {
+        let settings = GeneralSettings(defaultAction: .proxy(serverID: http.id), proxyAppDNS: true)
+        let e = engine(rules: [], settings: settings)
+        for c in [ctx("com.apple.mDNSResponder", port: 53),
+                  ctx("", "/usr/sbin/mDNSResponder", port: 53),
+                  ctx("", port: 53), ctx("test.app", ip: "::1", port: 53),
+                  ctx("test.app", port: 53, bound: true),
+                  ctx("com.apple.trustd", "/usr/libexec/trustd", port: 53)] {
+            XCTAssertEqual(e.decide(c).verdict, .direct)
+        }
+        XCTAssertEqual(e.decide(ctx("", "/Applications/Unsigned.app", port: 53)).verdict, .proxy(http))
+        let blocked = AppRule(name: "Blocked", bundleID: "test.blocked", path: "", action: .block)
+        XCTAssertEqual(engine(rules: [blocked], settings: settings).decide(ctx("test.blocked", port: 53)).verdict, .direct)
+    }
+
+    func testDNSWithMissingProxyFailsClosed() {
+        let settings = GeneralSettings(defaultAction: .proxy(serverID: UUID()), onProxyFailure: .direct, proxyAppDNS: true)
+        let e = engine(rules: [], settings: settings)
+        XCTAssertEqual(e.decide(ctx("app", port: 53)).verdict, .block)
+        XCTAssertEqual(e.decide(ctx("app", port: 53, udp: true)).verdict, .block)
+        XCTAssertEqual(e.decide(ctx("app", port: 443)).verdict, .direct)
+    }
 
     func testBoundFlowsBypassEvenInExclusionMode() {
         // 回归：Clash 内核把连接绑定到 en0 以绕开自己的 TUN，排除模式下若被接管会形成回环。
@@ -248,7 +287,7 @@ final class ModelsTests: XCTestCase {
         let cfg = ProxyAppXConfig(
             servers: [s],
             rules: [AppRule(name: "A", bundleID: "a", path: "/A.app", action: .proxy(serverID: s.id), udpPolicy: .proxy)],
-            settings: GeneralSettings(defaultAction: .block, onProxyFailure: .direct)
+            settings: GeneralSettings(defaultAction: .block, onProxyFailure: .direct, proxyAppDNS: false)
         )
         let decoded = try ProxyAppXConfig.decode(try cfg.encoded())
         XCTAssertEqual(decoded, cfg)
@@ -265,6 +304,8 @@ final class ModelsTests: XCTestCase {
         XCTAssertTrue(s.bypassBoundFlows)
         XCTAssertTrue(s.fakeIPFallback)
         XCTAssertFalse(s.upstreamAvoidTunnels)
+        XCTAssertTrue(s.proxyAppDNS)
+        XCTAssertEqual(s.dnsResolver.rawValue, "1.1.1.1")
     }
 
     func testDecodingToleratesMissingFields() throws {

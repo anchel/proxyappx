@@ -307,7 +307,7 @@ struct RuleEditor: View {
         guard let s = servers.first(where: { $0.id == serverID }) else { return "" }
         switch rule.udpPolicy {
         case .block:
-            return String(localized: "With UDP blocked, browsers and similar apps fall back from QUIC to TCP automatically, so traffic still goes through the proxy and nothing leaks.")
+            return String(localized: "With UDP blocked, apps can retry over TCP. If an app reports a QUIC error, check the proxy connection and try disabling QUIC in the app.")
         case .direct:
             return String(localized: "UDP bypasses the proxy and may reveal your real IP address.")
         case .proxy:

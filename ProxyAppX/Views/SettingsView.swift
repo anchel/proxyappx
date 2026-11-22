@@ -8,6 +8,7 @@ struct SettingsView: View {
     @State private var importError: String?
     @State private var confirmUninstall = false
     @State private var language = LanguagePreference.saved
+    @State private var resolverDraft: String?
 
     private var settings: GeneralSettings { model.store.configuration.settings }
 
@@ -73,6 +74,23 @@ struct SettingsView: View {
                     ForEach(FailurePolicy.allCases) { Text($0.displayName).tag($0) }
                 }
                 Toggle("Send hostnames to the proxy for resolution", isOn: binding(\.preferHostname))
+                Toggle("Route app DNS queries through their proxy", isOn: binding(\.proxyAppDNS))
+                if settings.proxyAppDNS {
+                    HStack {
+                        TextField("DNS resolver IP", text: Binding(
+                            get: { resolverDraft ?? settings.dnsResolver.rawValue },
+                            set: { resolverDraft = $0 }
+                        ))
+                        .onSubmit { applyResolver() }
+                        Button("Apply") { applyResolver() }
+                            .disabled(resolverDraft.flatMap(DNSResolver.init(rawValue:)) == nil)
+                    }
+                    if let resolverDraft, DNSResolver(rawValue: resolverDraft) == nil {
+                        Text("Enter an IPv4 or IPv6 address.").foregroundStyle(.red).font(.caption)
+                    }
+                    Text("Identifiable apps with a proxy rule send port 53 queries to this resolver through their proxy over TCP. A failed query is blocked. Queries attributed only to the system use system DNS.")
+                        .font(.caption).foregroundStyle(.secondary)
+                }
                 Toggle("Connect to local network addresses directly", isOn: binding(\.bypassLAN))
                 Stepper(value: binding(\.connectTimeout), in: 3...60, step: 1) {
                     LabeledContent("Connection timeout", value: String(localized: "\(Int(settings.connectTimeout)) s"))
@@ -173,6 +191,12 @@ struct SettingsView: View {
         } message: {
             Text("This stops the proxy and removes the proxy configuration and the network extension from macOS. Your rules and servers are kept.")
         }
+    }
+
+    private func applyResolver() {
+        guard let resolverDraft, let resolver = DNSResolver(rawValue: resolverDraft) else { return }
+        model.store.updateSettings { $0.dnsResolver = resolver }
+        self.resolverDraft = nil
     }
 
     private func exportConfig() {

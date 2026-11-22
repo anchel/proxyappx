@@ -126,13 +126,14 @@ final class TransparentProxyProvider: NETransparentProxyProvider, NEAppProxyUDPF
             return true
 
         case let .proxy(server):
-            let id = tracker.begin(snapshot(ctx, process, decision, verdict: .proxy, server: server))
             let settings = engine.configuration.settings
+            let id = beginProxy(ctx, process, decision, server: server, settings: settings)
+            let isDNS = decision.reason == .dns
             let plan = TCPRelay.Plan(
-                proxyTarget: engine.upstreamTarget(for: ctx),
+                proxyTarget: isDNS ? settings.dnsResolver.target : engine.upstreamTarget(for: ctx),
                 directTarget: destination,
                 upstream: .proxy(server),
-                failurePolicy: settings.onProxyFailure,
+                failurePolicy: isDNS ? .block : settings.onProxyFailure,
                 timeout: settings.connectTimeout,
                 avoidTunnels: settings.upstreamAvoidTunnels
             )
@@ -159,8 +160,14 @@ final class TransparentProxyProvider: NETransparentProxyProvider, NEAppProxyUDPF
             return true
 
         case let .proxy(server):
-            let id = tracker.begin(snapshot(ctx, process, decision, verdict: .proxy, server: server))
             let settings = engine.configuration.settings
+            let id = beginProxy(ctx, process, decision, server: server, settings: settings)
+            if decision.reason == .dns {
+                Task {
+                    await relayDNS(flow, id: id, server: server, settings: settings)
+                }
+                return true
+            }
             UDPRelay(flow: flow, id: id, server: server, timeout: settings.connectTimeout,
                      avoidTunnels: settings.upstreamAvoidTunnels, tracker: tracker).start()
             return true
@@ -168,6 +175,38 @@ final class TransparentProxyProvider: NETransparentProxyProvider, NEAppProxyUDPF
     }
 
     // MARK: 辅助
+
+    private func beginProxy(_ ctx: FlowContext, _ process: ProcessResolver.Info, _ decision: Decision,
+                            server: ProxyServer, settings: GeneralSettings) -> UInt64 {
+        var entry = snapshot(ctx, process, decision, verdict: .proxy, server: server)
+        if decision.reason == .dns { entry.target = settings.dnsResolver.target.description }
+        return tracker.begin(entry)
+    }
+
+    private func relayDNS(_ flow: NEAppProxyUDPFlow, id: UInt64, server: ProxyServer, settings: GeneralSettings) async {
+        do {
+            try await flow.openFlow()
+            while true {
+                let (datagrams, error) = await flow.readDatagrams()
+                if let error { throw error }
+                guard let datagrams, !datagrams.isEmpty else { break }
+                for (query, endpoint) in datagrams {
+                    guard TargetAddress(endpoint: endpoint)?.port == RuleEngine.dnsPort else { continue }
+                    tracker.addBytes(id, up: query.count)
+                    let reply = try await DNSForwarder.reply(to: query, resolver: settings.dnsResolver.target,
+                                                            via: server, timeout: settings.connectTimeout,
+                                                            avoidTunnels: settings.upstreamAvoidTunnels)
+                    try await flow.writeDatagrams([(reply, endpoint)])
+                    tracker.addBytes(id, down: reply.count)
+                }
+            }
+            flow.closeBoth()
+            tracker.finish(id, error: nil)
+        } catch {
+            flow.closeBoth(error)
+            tracker.finish(id, error: error.localizedDescription)
+        }
+    }
 
     private func context(for flow: NEAppProxyFlow, destination: TargetAddress,
                          transport: FlowContext.Transport) -> (FlowContext, ProcessResolver.Info) {

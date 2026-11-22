@@ -95,7 +95,7 @@ public enum RuleAction: Codable, Hashable, Sendable {
 }
 
 public enum UDPPolicy: String, Codable, CaseIterable, Sendable, Identifiable {
-    /// 阻断 UDP（浏览器会把 QUIC 回落到 TCP，防止泄漏）
+    /// 阻断 UDP（支持回退的应用可以改用 TCP 重试）
     case block
     /// UDP 直连
     case direct
@@ -182,6 +182,8 @@ public struct GeneralSettings: Codable, Hashable, Sendable {
     public var onProxyFailure: FailurePolicy
     /// 系统提供了目标域名时，把域名交给代理解析。
     public var preferHostname: Bool
+    public var proxyAppDNS: Bool
+    public var dnsResolver: DNSResolver
     /// 局域网、私有地址一律直连。
     public var bypassLAN: Bool
     /// 连接加握手的超时时间（秒）。
@@ -200,6 +202,8 @@ public struct GeneralSettings: Codable, Hashable, Sendable {
         defaultUDPPolicy: UDPPolicy = .block,
         onProxyFailure: FailurePolicy = .block,
         preferHostname: Bool = true,
+        proxyAppDNS: Bool = true,
+        dnsResolver: DNSResolver = .cloudflare,
         bypassLAN: Bool = true,
         connectTimeout: Double = 10,
         exemptSystemProcesses: Bool = true,
@@ -211,6 +215,8 @@ public struct GeneralSettings: Codable, Hashable, Sendable {
         self.defaultUDPPolicy = defaultUDPPolicy
         self.onProxyFailure = onProxyFailure
         self.preferHostname = preferHostname
+        self.proxyAppDNS = proxyAppDNS
+        self.dnsResolver = dnsResolver
         self.bypassLAN = bypassLAN
         self.connectTimeout = connectTimeout
         self.exemptSystemProcesses = exemptSystemProcesses
@@ -222,6 +228,7 @@ public struct GeneralSettings: Codable, Hashable, Sendable {
     enum CodingKeys: String, CodingKey {
         case defaultAction, defaultUDPPolicy, onProxyFailure, preferHostname, bypassLAN, connectTimeout, exemptSystemProcesses
         case bypassBoundFlows, fakeIPFallback, upstreamAvoidTunnels
+        case proxyAppDNS, dnsResolver
     }
 
     public init(from decoder: Decoder) throws {
@@ -231,6 +238,8 @@ public struct GeneralSettings: Codable, Hashable, Sendable {
         defaultUDPPolicy = try c.decodeIfPresent(UDPPolicy.self, forKey: .defaultUDPPolicy) ?? d.defaultUDPPolicy
         onProxyFailure = try c.decodeIfPresent(FailurePolicy.self, forKey: .onProxyFailure) ?? d.onProxyFailure
         preferHostname = try c.decodeIfPresent(Bool.self, forKey: .preferHostname) ?? d.preferHostname
+        proxyAppDNS = try c.decodeIfPresent(Bool.self, forKey: .proxyAppDNS) ?? d.proxyAppDNS
+        dnsResolver = try c.decodeIfPresent(DNSResolver.self, forKey: .dnsResolver) ?? d.dnsResolver
         bypassLAN = try c.decodeIfPresent(Bool.self, forKey: .bypassLAN) ?? d.bypassLAN
         connectTimeout = try c.decodeIfPresent(Double.self, forKey: .connectTimeout) ?? d.connectTimeout
         exemptSystemProcesses = try c.decodeIfPresent(Bool.self, forKey: .exemptSystemProcesses) ?? d.exemptSystemProcesses

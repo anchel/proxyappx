@@ -19,7 +19,7 @@ Requires macOS 15 or later.
 - **Per-app routing**: works with `.app` bundles and any executable, and automatically covers an app's helper processes (Chrome Helper, Electron Helper, and so on)
 - **Three actions**: Proxy (through a chosen server), Direct, or Block
 - **Proxy protocols**: SOCKS5 (no auth, username/password, UDP ASSOCIATE) and HTTP CONNECT (Basic auth)
-- **Leak protection**: connections fail closed when the proxy is down; UDP is blocked by default so browsers fall back from QUIC to TCP; hostnames are sent to the proxy for remote resolution
+- **Leak protection**: connections fail closed when the proxy is down; UDP is blocked by default, and apps that support fallback can retry over TCP; hostnames are sent to the proxy for remote resolution
 - **Exclusion mode**: send every app through the proxy except the ones you mark as Direct
 - **Coexists with Clash / FlClash and other TUN tools**: see [below](#coexisting-with-clash--flclash-and-other-tun-tools)
 - **Monitoring**: live connections, upload/download rates, logs, and an "Unmatched Apps" page that surfaces processes you may want to add rules for
@@ -159,6 +159,8 @@ python3 scripts/dev-socks5.py 1080
 
 Then run `curl https://example.com`; the test server prints `✓ CONNECT example.com:443`. Apps without a rule never show up there.
 
+To check plain DNS, add the same proxy rule for `/usr/bin/dig` and check that “Route app DNS queries through their proxy” is on. Run `dig @192.0.2.53 example.com A` and `dig +tcp @192.0.2.53 example.com A` to exercise UDP and TCP. The address in these commands is a documentation IP. Both queries should return an answer, and the proxy log should show the configured resolver (initially `1.1.1.1:53`). To check an app that uses the system resolver, open an uncached name in that app and compare the source app in Connections with a capture of local DNS traffic.
+
 Core library tests (rule matching, protocol codecs, end-to-end handshakes against in-process SOCKS5 / HTTP test servers, UDP relay):
 
 ```bash
@@ -167,7 +169,7 @@ cd Packages/ProxyAppXCore && swift test
 
 ## Coexisting with Clash / FlClash and other TUN tools
 
-Both can run at the same time. ProxyAppX intercepts connections at the socket layer first; whatever it lets through (including DNS) goes back to the system network stack and then follows the routing table into the TUN tool as usual:
+Both can run at the same time. ProxyAppX intercepts connections at the socket layer first. Traffic it passes through (including DNS for apps routed directly) follows the system routes into the TUN tool as usual:
 
 ```
 App → ① ProxyAppX (decides per app)
@@ -188,7 +190,8 @@ Note: with Clash in "system proxy" mode, apps that honor the system proxy connec
 
 ## Known limitations
 
-- **DNS does not go through the proxy**: macOS attributes an app's DNS queries (port 53) to the app itself, so to keep name resolution working, DNS always goes direct. With "Send hostnames to the proxy for resolution" (on by default), the connection itself still reaches the proxy by hostname, but a local DNS query still happens.
+- **Per-app DNS**. “Route app DNS queries through their proxy” is on by default in Settings › Connections. The resolver defaults to `1.1.1.1` and accepts a custom IP. When the extension receives a plain DNS flow (UDP/TCP 53) attributable to an app routed through a proxy, it connects to the resolver through that app’s SOCKS5 or HTTP CONNECT proxy on **TCP port 53**. The proxy must permit this port. Intercepted queries fail closed, including when other connections allow direct fallback. Use a resolver that knows your private domains if needed.
+- Queries attributed only to the system resolver, loopback DNS and exempt interface-bound connections keep their original resolution path. App-managed encrypted DNS follows ordinary connection rules. “Send hostnames to the proxy for resolution” independently controls the destination sent for subsequent TCP connections.
 - Traffic sent on an app's behalf by shared system processes (Safari, background downloads) is attributed however macOS attributes it, which may not match the app.
 - In exclusion mode, if a local proxy client (Clash and the like) does not bind its own connections to an interface (for example, TUN mode is off), add a Direct rule for it; the app warns you about this.
 - UDP can only be relayed through SOCKS5 servers that support UDP ASSOCIATE.

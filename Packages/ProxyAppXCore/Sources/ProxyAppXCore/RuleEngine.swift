@@ -132,23 +132,24 @@ public struct RuleEngine: Sendable {
 
     public func decide(_ ctx: FlowContext) -> Decision {
         let settings = configuration.settings
+        let isDNS = ctx.destination.port == Self.dnsPort
+        let routeAppDNS = isDNS && settings.proxyAppDNS
 
         if ctx.destination.isLoopback || (ctx.hostname.map { TargetAddress(host: $0, port: 0).isLoopback } ?? false) {
             return Decision(verdict: .direct, reason: .loopback, rule: nil)
         }
-        if settings.bypassLAN && ctx.destination.isLocalNetwork {
+        // DNS often targets a LAN router. The upstream proxy will connect to the configured resolver.
+        if !routeAppDNS && settings.bypassLAN && ctx.destination.isLocalNetwork {
             return Decision(verdict: .direct, reason: .localNetwork, rule: nil)
         }
         if isProxyServerAddress(ctx) {
             return Decision(verdict: .direct, reason: .proxyServer, rule: nil)
         }
         // 系统 DNS 解析器永远直连，否则整机 DNS 会被阻断。
-        if ctx.signingID == "com.apple.mDNSResponder" {
+        if ctx.signingID == "com.apple.mDNSResponder" || (isDNS && ctx.executablePath == "/usr/sbin/mDNSResponder") {
             return Decision(verdict: .direct, reason: .systemProcess, rule: nil)
         }
-        // 系统把 getaddrinfo 等发出的 DNS 查询归属到发起解析的应用本身，
-        // 若按应用的 UDP 策略阻断，应用会因无法解析域名而无法联网，所以 DNS 一律直连。
-        if ctx.destination.port == Self.dnsPort {
+        if isDNS && (!routeAppDNS || (ctx.signingID.isEmpty && ctx.executablePath?.isEmpty != false)) {
             return Decision(verdict: .direct, reason: .dns, rule: nil)
         }
 
@@ -161,6 +162,9 @@ public struct RuleEngine: Sendable {
             return Decision(verdict: .direct, reason: .systemProcess, rule: nil)
         }
         let action = rule?.action ?? settings.defaultAction
+        if routeAppDNS && !action.isProxy {
+            return Decision(verdict: .direct, reason: .dns, rule: rule)
+        }
         let udpPolicy = rule?.udpPolicy ?? settings.defaultUDPPolicy
         let reason: Decision.Reason = rule == nil ? .defaultAction : .rule
 
@@ -171,8 +175,11 @@ public struct RuleEngine: Sendable {
             return Decision(verdict: .block, reason: reason, rule: rule)
         case let .proxy(serverID):
             guard let server = configuration.server(id: serverID) else {
-                let v: Decision.Verdict = settings.onProxyFailure == .direct ? .direct : .block
+                let v: Decision.Verdict = !routeAppDNS && settings.onProxyFailure == .direct ? .direct : .block
                 return Decision(verdict: v, reason: .missingServer, rule: rule)
+            }
+            if routeAppDNS {
+                return Decision(verdict: .proxy(server), reason: .dns, rule: rule)
             }
             if needsFakeIPFallback(ctx, server: server) {
                 return Decision(verdict: .direct, reason: .fakeIP, rule: rule)

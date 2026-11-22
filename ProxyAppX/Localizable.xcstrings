@@ -402,6 +402,16 @@
         }
       }
     },
+    "Apply": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "应用"
+          }
+        }
+      }
+    },
     "Apps without a rule": {
       "localizations": {
         "zh-Hans": {
@@ -662,6 +672,16 @@
         }
       }
     },
+    "DNS resolver IP": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "DNS 服务器 IP"
+          }
+        }
+      }
+    },
     "Default Action": {
       "localizations": {
         "zh-Hans": {
@@ -834,6 +854,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "结束"
+          }
+        }
+      }
+    },
+    "Enter an IPv4 or IPv6 address.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "请输入 IPv4 或 IPv6 地址。"
           }
         }
       }
@@ -1044,6 +1074,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "IP 或域名"
+          }
+        }
+      }
+    },
+    "Identifiable apps with a proxy rule send port 53 queries to this resolver through their proxy over TCP. A failed query is blocked. Queries attributed only to the system use system DNS.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "可识别且走代理的 App 会通过代理，以 TCP 向此服务器发送 53 端口的 DNS 查询。查询失败时会阻断。仅归属到系统的查询仍由系统解析。"
           }
         }
       }
@@ -1718,6 +1758,16 @@
         }
       }
     },
+    "Route app DNS queries through their proxy": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "DNS 查询跟随 App 的代理规则"
+          }
+        }
+      }
+    },
     "Running": {
       "localizations": {
         "zh-Hans": {
@@ -2338,12 +2388,12 @@
         }
       }
     },
-    "With UDP blocked, browsers and similar apps fall back from QUIC to TCP automatically, so traffic still goes through the proxy and nothing leaks.": {
+    "With UDP blocked, apps can retry over TCP. If an app reports a QUIC error, check the proxy connection and try disabling QUIC in the app.": {
       "localizations": {
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "阻断后，浏览器等应用会自动从 QUIC 回落到 TCP，流量仍经过代理，不会泄漏。"
+            "value": "阻断 UDP 后，应用可以改用 TCP 重试。如果应用报 QUIC 错误，请检查代理连通性，并尝试在应用中关闭 QUIC。"
           }
         }
       }
