@@ -7,6 +7,7 @@ struct SettingsView: View {
     @Environment(AppModel.self) private var model
     @State private var importError: String?
     @State private var confirmUninstall = false
+    @State private var language = LanguagePreference.saved
 
     private var settings: GeneralSettings { model.store.configuration.settings }
 
@@ -43,131 +44,146 @@ struct SettingsView: View {
         @Bindable var model = model
         Form {
             Section {
-                Picker("未命中规则的应用", selection: defaultActionBinding) {
-                    Text("直连（推荐）").tag(UUID?.none)
+                Picker("Apps without a rule", selection: defaultActionBinding) {
+                    Text("Direct (recommended)").tag(UUID?.none)
                     ForEach(model.store.configuration.servers) { s in
-                        Text("代理：\(s.name)").tag(Optional(s.id))
+                        Text("Proxy: \(s.name)").tag(Optional(s.id))
                     }
-                    Text("阻断").tag(Optional(Self.blockTag))
+                    Text("Block").tag(Optional(Self.blockTag))
                 }
                 if settings.defaultAction != .direct {
-                    Toggle("系统进程仍然直连", isOn: binding(\.exemptSystemProcesses))
-                    Text("Apple 签名且位于 /System、/usr 等目录的进程（系统服务、命令行工具）不走默认动作，除非被规则显式命中。关闭后可能影响系统更新、iCloud 等。")
+                    Toggle("Keep system processes direct", isOn: binding(\.exemptSystemProcesses))
+                    Text("Apple-signed processes in /System, /usr and similar folders (system services, command-line tools) skip the default action unless a rule matches them explicitly. Turning this off may affect software updates, iCloud and more.")
                         .font(.caption).foregroundStyle(.secondary)
                 }
                 if settings.defaultAction.isProxy {
-                    Picker("默认动作的 UDP 流量", selection: binding(\.defaultUDPPolicy)) {
+                    Picker("UDP for the default action", selection: binding(\.defaultUDPPolicy)) {
                         ForEach(UDPPolicy.allCases) { Text($0.displayName).tag($0) }
                     }
                 }
             } header: {
-                Text("默认动作")
+                Text("Default Action")
             } footer: {
-                Text("选择「代理」即为排除模式：除了设为「直连」的应用外，所有应用都走代理。")
+                Text("Choosing a proxy turns on exclusion mode: every app goes through the proxy except those set to Direct.")
                     .font(.caption).foregroundStyle(.secondary)
             }
 
-            Section("连接") {
-                Picker("代理不可用时", selection: binding(\.onProxyFailure)) {
+            Section("Connections") {
+                Picker("When the proxy is unavailable", selection: binding(\.onProxyFailure)) {
                     ForEach(FailurePolicy.allCases) { Text($0.displayName).tag($0) }
                 }
-                Toggle("优先把域名交给代理解析", isOn: binding(\.preferHostname))
-                Toggle("局域网地址直连", isOn: binding(\.bypassLAN))
+                Toggle("Send hostnames to the proxy for resolution", isOn: binding(\.preferHostname))
+                Toggle("Connect to local network addresses directly", isOn: binding(\.bypassLAN))
                 Stepper(value: binding(\.connectTimeout), in: 3...60, step: 1) {
-                    LabeledContent("连接超时", value: "\(Int(settings.connectTimeout)) 秒")
+                    LabeledContent("Connection timeout", value: String(localized: "\(Int(settings.connectTimeout)) s"))
                 }
             }
 
             Section {
-                LabeledContent("检测结果") {
-                    Text(model.network.tunnel?.summary ?? "未检测到接管公网流量的 VPN / TUN")
+                LabeledContent("Detected") {
+                    Text(model.network.tunnel?.summary ?? String(localized: "No VPN or TUN is carrying public traffic"))
                         .foregroundStyle(model.network.tunnel == nil ? Color.secondary : Color.orange)
                         .multilineTextAlignment(.trailing)
                 }
-                Toggle("绑定到网卡的连接直连（推荐）", isOn: binding(\.bypassBoundFlows))
-                Text("VPN / 代理内核（如 Clash 内核）会把自己的连接绑定到物理网卡来绕开 TUN；这类连接被接管后会丢失绑定，形成回环。")
+                Toggle("Bound connections go direct (recommended)", isOn: binding(\.bypassBoundFlows))
+                Text("VPN and proxy cores (such as Clash's) bind their own connections to the physical interface to escape their TUN. Taking such a connection over drops the binding and creates a loop.")
                     .font(.caption).foregroundStyle(.secondary)
-                Toggle("fake-IP 无域名时交给 TUN 处理（推荐）", isOn: binding(\.fakeIPFallback))
-                Text("目标是 198.18.0.0/15 的 fake-IP、又拿不到域名时，远程代理无法连接；这时把连接交还给制造 fake-IP 的工具处理。上游代理在本机时不受影响。")
+                Toggle("Hand fake IPs without a hostname to the TUN (recommended)", isOn: binding(\.fakeIPFallback))
+                Text("When the destination is a fake IP in 198.18.0.0/15 and no hostname is known, a remote proxy cannot connect; the connection goes back to the tool that issued the fake IP. Proxies on this Mac are not affected.")
                     .font(.caption).foregroundStyle(.secondary)
-                Toggle("上游连接绕过其他 VPN / TUN", isOn: binding(\.upstreamAvoidTunnels))
-                Text("开启后，扩展直接经物理网卡连接代理服务器，不会再被 Clash 等工具处理一次。如果代理服务器只能通过公司 VPN 访问，请不要开启。")
+                Toggle("Upstream connections bypass other VPN / TUN", isOn: binding(\.upstreamAvoidTunnels))
+                Text("When on, the extension reaches proxy servers over the physical interface, so tools like Clash do not process that traffic again. Leave it off if your proxy server is only reachable through a company VPN.")
                     .font(.caption).foregroundStyle(.secondary)
                 HStack {
-                    Text("也可以在 Clash 规则中放行本扩展：")
+                    Text("Or let the extension through in your Clash rules:")
                         .font(.caption).foregroundStyle(.secondary)
-                    Text(AppModel.clashDirectRule)
+                    Text(verbatim: AppModel.clashDirectRule)
                         .font(.caption.monospaced())
                         .textSelection(.enabled)
                     Spacer()
-                    Button("复制") {
+                    Button("Copy") {
                         NSPasteboard.general.clearContents()
                         NSPasteboard.general.setString(AppModel.clashDirectRule, forType: .string)
                     }
                     .controlSize(.small)
                 }
             } header: {
-                Text("与其他 VPN / TUN 共存")
+                Text("Coexisting with Other VPN / TUN")
             }
 
-            Section("通用") {
-                Toggle("登录时启动 ProxyAppX", isOn: $model.launchAtLogin)
+            Section("General") {
+                Picker("Language", selection: $language) {
+                    Text("Follow System").tag(LanguagePreference.system)
+                    Text(verbatim: "English").tag(LanguagePreference.english)
+                    Text(verbatim: "简体中文").tag(LanguagePreference.simplifiedChinese)
+                }
+                .onChange(of: language) { _, new in new.save() }
+                if language != LanguagePreference.atLaunch {
+                    HStack {
+                        Text("Relaunch ProxyAppX to apply the new language.")
+                            .font(.caption).foregroundStyle(.secondary)
+                        Spacer()
+                        Button("Relaunch Now") { LanguagePreference.relaunch() }
+                            .controlSize(.small)
+                    }
+                }
+                Toggle("Launch ProxyAppX at login", isOn: $model.launchAtLogin)
                 if let e = model.loginItemError {
                     Text(e).font(.caption).foregroundStyle(.red)
                 }
             }
 
-            Section("配置文件") {
+            Section("Configuration File") {
                 HStack {
-                    Button("导出…") { exportConfig() }
-                    Button("导入…") { importConfig() }
+                    Button("Export…") { exportConfig() }
+                    Button("Import…") { importConfig() }
                     Spacer()
-                    Button("在访达中显示") {
+                    Button("Show in Finder") {
                         NSWorkspace.shared.activateFileViewerSelecting([ConfigStore.fileURL])
                     }
                 }
-                Text("导出的文件不包含密码。导入会替换当前所有服务器和规则。")
+                Text("Exported files do not include passwords. Importing replaces all current servers and rules.")
                     .font(.caption).foregroundStyle(.secondary)
                 if let importError {
                     Text(importError).font(.caption).foregroundStyle(.red)
                 }
             }
 
-            Section("网络扩展") {
-                LabeledContent("状态", value: model.extensionManager.state.title)
-                LabeledContent("标识", value: model.extensionManager.extensionIdentifier)
+            Section("Network Extension") {
+                LabeledContent("Status", value: model.extensionManager.state.title)
+                LabeledContent("Identifier", value: model.extensionManager.extensionIdentifier)
                 if let s = model.monitor.snapshot {
-                    LabeledContent("扩展版本", value: s.extensionVersion)
+                    LabeledContent("Extension version", value: s.extensionVersion)
                 }
                 HStack {
-                    Button("重新安装") { model.extensionManager.activate() }
-                    Button("卸载扩展…", role: .destructive) { confirmUninstall = true }
+                    Button("Reinstall") { model.extensionManager.activate() }
+                    Button("Uninstall Extension…", role: .destructive) { confirmUninstall = true }
                 }
             }
         }
         .formStyle(.grouped)
-        .navigationTitle("设置")
-        .confirmationDialog("卸载网络扩展？", isPresented: $confirmUninstall) {
-            Button("卸载", role: .destructive) {
+        .navigationTitle(SidebarItem.settings.title)
+        .confirmationDialog("Uninstall the network extension?", isPresented: $confirmUninstall) {
+            Button("Uninstall", role: .destructive) {
                 Task {
                     await model.controller.removeConfiguration()
                     model.extensionManager.deactivate()
                 }
             }
         } message: {
-            Text("会停止代理并从系统中移除代理配置和网络扩展。你的规则和服务器配置会保留。")
+            Text("This stops the proxy and removes the proxy configuration and the network extension from macOS. Your rules and servers are kept.")
         }
     }
 
     private func exportConfig() {
         let panel = NSSavePanel()
         panel.allowedContentTypes = [.json]
-        panel.nameFieldStringValue = "ProxyAppX-配置.json"
+        panel.nameFieldStringValue = String(localized: "ProxyAppX-Configuration.json")
         guard panel.runModal() == .OK, let url = panel.url else { return }
         do {
             try model.store.exportData().write(to: url, options: .atomic)
         } catch {
-            importError = "导出失败：\(error.localizedDescription)"
+            importError = String(localized: "Export failed: \(error.localizedDescription)")
         }
     }
 
@@ -179,7 +195,7 @@ struct SettingsView: View {
             try model.store.importData(Data(contentsOf: url))
             importError = nil
         } catch {
-            importError = "导入失败：\(error.localizedDescription)"
+            importError = String(localized: "Import failed: \(error.localizedDescription)")
         }
     }
 }

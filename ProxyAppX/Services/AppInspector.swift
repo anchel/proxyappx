@@ -70,8 +70,8 @@ enum AppInspector {
     @MainActor
     static func pickApplications() -> [InspectedApp] {
         let panel = NSOpenPanel()
-        panel.title = "选择要代理的应用"
-        panel.prompt = "添加"
+        panel.title = String(localized: "Choose Apps to Proxy")
+        panel.prompt = String(localized: "Add")
         panel.allowsMultipleSelection = true
         panel.canChooseDirectories = false
         panel.treatsFilePackagesAsDirectories = false
@@ -84,9 +84,9 @@ enum AppInspector {
     @MainActor
     static func pickExecutables() -> [InspectedApp] {
         let panel = NSOpenPanel()
-        panel.title = "选择命令行工具或可执行文件"
-        panel.message = "提示：按 ⌘⇧G 可以输入路径，例如 /usr/bin/curl 或 /opt/homebrew/bin/git"
-        panel.prompt = "添加"
+        panel.title = String(localized: "Choose a Command-Line Tool or Executable")
+        panel.message = String(localized: "Tip: press ⌘⇧G to type a path, such as /usr/bin/curl or /opt/homebrew/bin/git")
+        panel.prompt = String(localized: "Add")
         panel.allowsMultipleSelection = true
         panel.canChooseDirectories = false
         panel.treatsFilePackagesAsDirectories = true

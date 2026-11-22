@@ -147,15 +147,17 @@ final class TCPRelay: @unchecked Sendable {
                 let conn = try await ProxyConnector.connect(to: plan.proxyTarget, via: .proxy(server), timeout: plan.timeout,
                                                             avoidTunnels: plan.avoidTunnels)
                 let via = conn.connection.currentPath?.availableInterfaces.first?.name ?? "?"
-                tracker.debug("#\(id) \(plan.proxyTarget) 经 \(server.name)（网卡 \(via)）")
+                tracker.debug("#\(id) \(plan.proxyTarget) via \(server.name) (interface \(via))")
                 return conn
             } catch {
                 let reason = (error as? LocalizedError)?.errorDescription ?? "\(error)"
                 guard plan.failurePolicy == .direct else {
-                    tracker.log(.warning, "代理 \(server.name) 连接 \(plan.proxyTarget) 失败：\(reason)")
+                    tracker.log(.warning, L10n.t("Proxy \(server.name) failed to reach \(plan.proxyTarget): \(reason)",
+                                                 "代理 \(server.name) 连接 \(plan.proxyTarget) 失败：\(reason)"))
                     throw error
                 }
-                tracker.log(.warning, "代理 \(server.name) 失败（\(reason)），\(plan.directTarget) 回落直连")
+                tracker.log(.warning, L10n.t("Proxy \(server.name) failed (\(reason)); \(plan.directTarget) falls back to direct",
+                                             "代理 \(server.name) 失败（\(reason)），\(plan.directTarget) 回落直连"))
                 tracker.markFallback(id)
                 return try await ProxyConnector.connect(to: plan.directTarget, via: .direct, timeout: plan.timeout)
             }
@@ -232,7 +234,9 @@ final class UDPRelay: @unchecked Sendable {
             assoc = try await SOCKS5UDPAssociation.open(server: server, timeout: timeout, avoidTunnels: avoidTunnels)
         } catch {
             firstError.set(error)
-            tracker.log(.warning, "UDP 关联 \(server.name) 失败：\((error as? LocalizedError)?.errorDescription ?? "\(error)")")
+            let reason = (error as? LocalizedError)?.errorDescription ?? "\(error)"
+            tracker.log(.warning, L10n.t("UDP association with \(server.name) failed: \(reason)",
+                                         "UDP 关联 \(server.name) 失败：\(reason)"))
             flow.reject()
             tracker.finish(id, error: firstError.value)
             return

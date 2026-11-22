@@ -3,7 +3,7 @@
 <plist version="1.0">
 <dict>
 	<key>CFBundleDevelopmentRegion</key>
-	<string>zh_CN</string>
+	<string>en</string>
 	<key>CFBundleDisplayName</key>
 	<string>ProxyAppX</string>
 	<key>CFBundleExecutable</key>
@@ -29,7 +29,7 @@
 	<key>NSHumanReadableCopyright</key>
 	<string></string>
 	<key>NSSystemExtensionUsageDescription</key>
-	<string>ProxyAppX 需要安装网络扩展，才能把你指定的应用的网络流量转发到代理服务器。</string>
+	<string>ProxyAppX installs a network extension so it can send the network traffic of the apps you choose through your proxy server.</string>
 	<key>ProxyAppXExtensionBundleIdentifier</key>
 	<string>$(EXTENSION_BUNDLE_IDENTIFIER)</string>
 </dict>

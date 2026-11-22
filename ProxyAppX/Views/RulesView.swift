@@ -21,14 +21,14 @@ struct RulesView: View {
     var body: some View {
         Group {
             if model.store.configuration.rules.isEmpty {
-                EmptyStateView(systemImage: "square.stack.3d.up.slash", title: "还没有应用规则",
-                               message: "点击右上角的「添加」，选择要走代理的应用或命令行工具。")
+                EmptyStateView(systemImage: "square.stack.3d.up.slash", title: "No App Rules Yet",
+                               message: "Click Add in the toolbar and choose the apps or command-line tools to proxy.")
             } else {
                 table
             }
         }
-        .navigationTitle("应用规则")
-        .searchable(text: $search, placement: .toolbar, prompt: "搜索应用")
+        .navigationTitle(SidebarItem.rules.title)
+        .searchable(text: $search, placement: .toolbar, prompt: Text("Search apps"))
         .toolbar { toolbar }
         .sheet(item: $editing) { rule in
             RuleEditor(rule: rule) { updated in
@@ -38,8 +38,9 @@ struct RulesView: View {
         .sheet(isPresented: $showRunningApps) {
             RunningAppsPicker { apps in add(apps) }
         }
-        .alert("部分应用已存在", isPresented: Binding(get: { duplicateNotice != nil }, set: { if !$0 { duplicateNotice = nil } })) {
-            Button("好") {}
+        .alert("Some Apps Already Have Rules",
+               isPresented: Binding(get: { duplicateNotice != nil }, set: { if !$0 { duplicateNotice = nil } })) {
+            Button("OK") {}
         } message: {
             Text(duplicateNotice ?? "")
         }
@@ -48,17 +49,19 @@ struct RulesView: View {
     private var table: some View {
         let servers = model.store.configuration.servers
         return Table(rules, selection: $selection) {
-            TableColumn("启用") { rule in
-                Toggle("", isOn: Binding(
+            TableColumn("On") { rule in
+                Toggle(isOn: Binding(
                     get: { rule.enabled },
                     set: { model.store.setRuleEnabled(rule.id, $0) }
-                ))
+                )) {
+                    Text("Enabled")
+                }
                 .labelsHidden()
                 .toggleStyle(.checkbox)
             }
             .width(40)
 
-            TableColumn("应用") { rule in
+            TableColumn("App") { rule in
                 HStack(spacing: 8) {
                     AppIcon(path: rule.path, size: 22)
                     VStack(alignment: .leading, spacing: 1) {
@@ -73,7 +76,7 @@ struct RulesView: View {
             }
             .width(min: 200, ideal: 280)
 
-            TableColumn("动作") { rule in
+            TableColumn("Action") { rule in
                 ActionBadge(action: rule.action, servers: servers)
             }
             .width(min: 90, ideal: 130)
@@ -83,9 +86,9 @@ struct RulesView: View {
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
             }
-            .width(min: 80, ideal: 110)
+            .width(min: 80, ideal: 130)
 
-            TableColumn("路径") { rule in
+            TableColumn("Path") { rule in
                 Text(rule.path)
                     .font(.caption)
                     .foregroundStyle(.secondary)
@@ -96,20 +99,24 @@ struct RulesView: View {
         }
         .contextMenu(forSelectionType: AppRule.ID.self) { ids in
             if let id = ids.first, ids.count == 1, let rule = rules.first(where: { $0.id == id }) {
-                Button("编辑…") { editing = rule }
-                Button(rule.enabled ? "停用" : "启用") { model.store.setRuleEnabled(rule.id, !rule.enabled) }
-                Button("在访达中显示") { NSWorkspace.shared.selectFile(rule.path, inFileViewerRootedAtPath: "") }
+                Button("Edit…") { editing = rule }
+                if rule.enabled {
+                    Button("Disable") { model.store.setRuleEnabled(rule.id, false) }
+                } else {
+                    Button("Enable") { model.store.setRuleEnabled(rule.id, true) }
+                }
+                Button("Show in Finder") { NSWorkspace.shared.selectFile(rule.path, inFileViewerRootedAtPath: "") }
                 Divider()
             }
             if !ids.isEmpty {
-                Menu("设置动作") {
+                Menu("Set Action") {
                     ForEach(model.store.configuration.servers) { s in
-                        Button("代理：\(s.name)") { setAction(.proxy(serverID: s.id), for: ids) }
+                        Button("Proxy: \(s.name)") { setAction(.proxy(serverID: s.id), for: ids) }
                     }
-                    Button("直连") { setAction(.direct, for: ids) }
-                    Button("阻断") { setAction(.block, for: ids) }
+                    Button("Direct") { setAction(.direct, for: ids) }
+                    Button("Block") { setAction(.block, for: ids) }
                 }
-                Button("删除", role: .destructive) { delete(ids) }
+                Button("Delete", role: .destructive) { delete(ids) }
             }
         } primaryAction: { ids in
             if let id = ids.first, let rule = rules.first(where: { $0.id == id }) { editing = rule }
@@ -123,17 +130,17 @@ struct RulesView: View {
             Button {
                 delete(selection)
             } label: {
-                Label("删除", systemImage: "trash")
+                Label("Delete", systemImage: "trash")
             }
             .disabled(selection.isEmpty)
 
             Menu {
-                Button("从「应用程序」中选择…") { add(AppInspector.pickApplications()) }
-                Button("从正在运行的应用中选择…") { showRunningApps = true }
+                Button("Choose from Applications…") { add(AppInspector.pickApplications()) }
+                Button("Choose from Running Apps…") { showRunningApps = true }
                 Divider()
-                Button("选择命令行工具 / 可执行文件…") { add(AppInspector.pickExecutables()) }
+                Button("Choose a Command-Line Tool or Executable…") { add(AppInspector.pickExecutables()) }
             } label: {
-                Label("添加", systemImage: "plus")
+                Label("Add", systemImage: "plus")
             }
         }
     }
@@ -155,7 +162,8 @@ struct RulesView: View {
             added.append(rule)
         }
         if !duplicates.isEmpty {
-            duplicateNotice = "以下应用已有规则，已跳过：\(duplicates.joined(separator: "、"))"
+            let names = duplicates.joined(separator: String(localized: ", ", comment: "Separator between app names"))
+            duplicateNotice = String(localized: "These apps already have rules and were skipped: \(names)")
         }
         if added.count == 1 {
             editing = added[0]
@@ -186,8 +194,16 @@ struct RuleEditor: View {
     let onSave: (AppRule) -> Void
 
     private enum ActionKind: String, CaseIterable, Identifiable {
-        case proxy = "代理", direct = "直连", block = "阻断"
+        case proxy, direct, block
         var id: String { rawValue }
+
+        var title: LocalizedStringKey {
+            switch self {
+            case .proxy: return "Proxy"
+            case .direct: return "Direct"
+            case .block: return "Block"
+            }
+        }
     }
 
     @State private var kind: ActionKind
@@ -215,7 +231,7 @@ struct RuleEditor: View {
             HStack(spacing: 12) {
                 AppIcon(path: rule.path, size: 40)
                 VStack(alignment: .leading, spacing: 2) {
-                    TextField("名称", text: $rule.name)
+                    TextField("Name", text: $rule.name)
                         .textFieldStyle(.plain)
                         .font(.title3.weight(.semibold))
                     Text(rule.path)
@@ -229,22 +245,22 @@ struct RuleEditor: View {
             .padding(20)
 
             Form {
-                Picker("动作", selection: $kind) {
-                    ForEach(ActionKind.allCases) { Text($0.rawValue).tag($0) }
+                Picker("Action", selection: $kind) {
+                    ForEach(ActionKind.allCases) { Text($0.title).tag($0) }
                 }
                 .pickerStyle(.segmented)
 
                 if kind == .proxy {
                     if servers.isEmpty {
-                        Text("还没有代理服务器，请先到「代理服务器」中添加。")
+                        Text("There are no proxy servers yet. Add one under Proxy Servers first.")
                             .foregroundStyle(.orange)
                     } else {
-                        Picker("代理服务器", selection: $serverID) {
+                        Picker("Proxy server", selection: $serverID) {
                             ForEach(servers) { s in
-                                Text("\(s.name)  (\(s.endpointDescription))").tag(Optional(s.id))
+                                Text(verbatim: "\(s.name)  (\(s.endpointDescription))").tag(Optional(s.id))
                             }
                         }
-                        Picker("UDP 流量", selection: $rule.udpPolicy) {
+                        Picker("UDP traffic", selection: $rule.udpPolicy) {
                             ForEach(UDPPolicy.allCases) { Text($0.displayName).tag($0) }
                         }
                         Text(udpHint(servers: servers))
@@ -253,13 +269,13 @@ struct RuleEditor: View {
                     }
                 }
 
-                Section("匹配") {
-                    TextField("签名标识 / Bundle ID", text: $rule.bundleID)
+                Section("Matching") {
+                    TextField("Signing identifier / bundle ID", text: $rule.bundleID)
                         .font(.body.monospaced())
-                    Text("同时匹配以「\(rule.bundleID.isEmpty ? "…" : rule.bundleID).」开头的 helper 进程，以及位于该应用包内的所有进程。")
+                    Text("Also matches helper processes whose identifier starts with \"\(rule.bundleID.isEmpty ? "…" : rule.bundleID).\", and every process inside this app bundle.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
-                    Toggle("启用此规则", isOn: $rule.enabled)
+                    Toggle("Enable this rule", isOn: $rule.enabled)
                 }
             }
             .formStyle(.grouped)
@@ -267,9 +283,9 @@ struct RuleEditor: View {
 
             HStack {
                 Spacer()
-                Button("取消") { dismiss() }
+                Button("Cancel") { dismiss() }
                     .keyboardShortcut(.cancelAction)
-                Button("保存") {
+                Button("Save") {
                     save()
                     dismiss()
                 }
@@ -278,7 +294,7 @@ struct RuleEditor: View {
             }
             .padding(20)
         }
-        .frame(width: 520)
+        .frame(width: 540)
         .onAppear {
             if kind == .proxy && serverID == nil { serverID = servers.first?.id }
         }
@@ -290,11 +306,14 @@ struct RuleEditor: View {
     private func udpHint(servers: [ProxyServer]) -> String {
         guard let s = servers.first(where: { $0.id == serverID }) else { return "" }
         switch rule.udpPolicy {
-        case .block: return "阻断后，浏览器等应用会自动从 QUIC 回落到 TCP，流量仍经过代理，不会泄漏。"
-        case .direct: return "UDP 不经过代理，可能暴露真实 IP。"
+        case .block:
+            return String(localized: "With UDP blocked, browsers and similar apps fall back from QUIC to TCP automatically, so traffic still goes through the proxy and nothing leaks.")
+        case .direct:
+            return String(localized: "UDP bypasses the proxy and may reveal your real IP address.")
         case .proxy:
-            return s.canRelayUDP ? "UDP 将通过 SOCKS5 UDP ASSOCIATE 转发。"
-                : "「\(s.name)」不支持 UDP 转发（HTTP 代理，或未勾选「支持 UDP」），UDP 会被阻断。"
+            return s.canRelayUDP
+                ? String(localized: "UDP will be relayed with SOCKS5 UDP ASSOCIATE.")
+                : String(localized: "\"\(s.name)\" cannot relay UDP (it is an HTTP proxy, or \"Supports UDP\" is off), so UDP will be blocked.")
         }
     }
 
@@ -319,7 +338,7 @@ struct RunningAppsPicker: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            Text("选择正在运行的应用")
+            Text("Choose Running Apps")
                 .font(.headline)
                 .padding()
             List(apps, selection: $chosen) { app in
@@ -336,10 +355,10 @@ struct RunningAppsPicker: View {
             .frame(height: 360)
             .padding(.horizontal)
             HStack {
-                Text("可按住 ⌘ 多选").font(.caption).foregroundStyle(.secondary)
+                Text("Hold ⌘ to select several").font(.caption).foregroundStyle(.secondary)
                 Spacer()
-                Button("取消") { dismiss() }.keyboardShortcut(.cancelAction)
-                Button("添加 \(chosen.count) 个") {
+                Button("Cancel") { dismiss() }.keyboardShortcut(.cancelAction)
+                Button("Add \(chosen.count)") {
                     let picked = apps.filter { chosen.contains($0.path) }
                     dismiss()
                     onAdd(picked)

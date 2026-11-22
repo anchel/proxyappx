@@ -1,0 +1,2383 @@
+{
+  "sourceLanguage": "en",
+  "strings": {
+    "\"%@\" cannot relay UDP (it is an HTTP proxy, or \"Supports UDP\" is off), so UDP will be blocked.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "「%@」不支持 UDP 转发（它是 HTTP 代理，或没有勾选「服务器支持 UDP 转发」），UDP 会被阻断。"
+          }
+        }
+      }
+    },
+    "\"Bound connections go direct\" is off and the default action is a proxy, so the proxy core behind %@ may be taken over and loop.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已关闭「绑定到网卡的连接直连」且默认动作为代理，%@ 背后的代理内核可能被接管，形成回环。"
+          }
+        }
+      }
+    },
+    "%@ (code %lld)": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "%1$@ (code %2$lld)"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@（代码 %lld）"
+          }
+        }
+      }
+    },
+    "%@ is in fake-IP mode. Turn on \"Send hostnames to the proxy for resolution\" in Settings; otherwise remote proxies receive unusable addresses like 198.18.x.x.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ 处于 fake-IP 模式，建议在设置中开启「优先把域名交给代理解析」，否则远程代理收到的是 198.18.x.x 这类无效地址。"
+          }
+        }
+      }
+    },
+    "%@ · used by %lld rules": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ · used by %#@rules@"
+          },
+          "substitutions": {
+            "rules": {
+              "argNum": 2,
+              "formatSpecifier": "lld",
+              "variations": {
+                "plural": {
+                  "one": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg rule"
+                    }
+                  },
+                  "other": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg rules"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ · %lld 条规则在使用"
+          }
+        }
+      }
+    },
+    "%@%@ is carrying public traffic: a VPN or TUN tool": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "%1$@%2$@ is carrying public traffic: a VPN or TUN tool"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@%@ 正在接管公网流量：VPN 或 TUN 工具"
+          }
+        }
+      }
+    },
+    "%@%@ is carrying public traffic: a fake-IP TUN, probably Clash, FlClash or Surge": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "%1$@%2$@ is carrying public traffic: a fake-IP TUN, probably Clash, FlClash or Surge"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@%@ 正在接管公网流量：fake-IP 模式的 TUN，可能是 Clash、FlClash 或 Surge"
+          }
+        }
+      }
+    },
+    "%lld more…": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "还有 %lld 条…"
+          }
+        }
+      }
+    },
+    "%lld rules use a proxy server that no longer exists.": {
+      "localizations": {
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld rule uses a proxy server that no longer exists."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld rules use a proxy server that no longer exists."
+                }
+              }
+            }
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "有 %lld 条规则引用的代理服务器已不存在。"
+          }
+        }
+      }
+    },
+    "%lld rules use this server. After it is deleted, they will switch to Direct.": {
+      "localizations": {
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld rule uses this server. After it is deleted, it will switch to Direct."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld rules use this server. After it is deleted, they will switch to Direct."
+                }
+              }
+            }
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "有 %lld 条规则正在使用它，删除后这些规则会改为「直连」。"
+          }
+        }
+      }
+    },
+    "%lld s": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld 秒"
+          }
+        }
+      }
+    },
+    "%llu connections · latest: %@ · %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%#@connections@ · latest: %2$@ · %3$@"
+          },
+          "substitutions": {
+            "connections": {
+              "argNum": 1,
+              "formatSpecifier": "llu",
+              "variations": {
+                "plural": {
+                  "one": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg connection"
+                    }
+                  },
+                  "other": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg connections"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%llu 个连接 · 最近：%@ · %@"
+          }
+        }
+      }
+    },
+    "%llu direct": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "直连 %llu"
+          }
+        }
+      }
+    },
+    "%llu failed": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%llu 次失败"
+          }
+        }
+      }
+    },
+    ", ": {
+      "comment": "Separator between app names",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "、"
+          }
+        }
+      }
+    },
+    "Action": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "动作"
+          }
+        }
+      }
+    },
+    "Active": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "活动"
+          }
+        }
+      }
+    },
+    "Active Rules": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "生效中的规则"
+          }
+        }
+      }
+    },
+    "Active connections": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "活动连接"
+          }
+        }
+      }
+    },
+    "Add": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "添加"
+          }
+        }
+      }
+    },
+    "Add %lld": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "添加 %lld 个"
+          }
+        }
+      }
+    },
+    "Add Rule": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "添加规则"
+          }
+        }
+      }
+    },
+    "Add a proxy server": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "添加代理服务器"
+          }
+        }
+      }
+    },
+    "All": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "全部"
+          }
+        }
+      }
+    },
+    "Also matches helper processes whose identifier starts with \"%@.\", and every process inside this app bundle.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "同时匹配以「%@.」开头的 helper 进程，以及位于该应用包内的所有进程。"
+          }
+        }
+      }
+    },
+    "App": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "应用"
+          }
+        }
+      }
+    },
+    "App Rules": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "应用规则"
+          }
+        }
+      }
+    },
+    "App or destination": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "应用或目标"
+          }
+        }
+      }
+    },
+    "Apple-signed processes in /System, /usr and similar folders (system services, command-line tools) skip the default action unless a rule matches them explicitly. Turning this off may affect software updates, iCloud and more.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apple 签名且位于 /System、/usr 等目录的进程（系统服务、命令行工具）不走默认动作，除非被规则显式命中。关闭后可能影响系统更新、iCloud 等。"
+          }
+        }
+      }
+    },
+    "Apps without a rule": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未命中规则的应用"
+          }
+        }
+      }
+    },
+    "Apps without a rule: %@": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未命中规则的应用：%@"
+          }
+        }
+      }
+    },
+    "Authentication (optional)": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "认证（可选）"
+          }
+        }
+      }
+    },
+    "Authorization is required. Allow it in System Settings.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "需要授权，请在系统设置中允许。"
+          }
+        }
+      }
+    },
+    "Block": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "阻断"
+          }
+        }
+      }
+    },
+    "Bound connections go direct (recommended)": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "绑定到网卡的连接直连（推荐）"
+          }
+        }
+      }
+    },
+    "Cancel": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "取消"
+          }
+        }
+      }
+    },
+    "Cannot read or write the system configuration. Did you deny the request to add a proxy configuration?": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "无法读写系统配置（是否拒绝了「添加代理配置」的请求？）"
+          }
+        }
+      }
+    },
+    "Checking…": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在检查…"
+          }
+        }
+      }
+    },
+    "Choose Apps to Proxy": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "选择要代理的应用"
+          }
+        }
+      }
+    },
+    "Choose Running Apps": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "选择正在运行的应用"
+          }
+        }
+      }
+    },
+    "Choose a Command-Line Tool or Executable": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "选择命令行工具或可执行文件"
+          }
+        }
+      }
+    },
+    "Choose a Command-Line Tool or Executable…": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "选择命令行工具 / 可执行文件…"
+          }
+        }
+      }
+    },
+    "Choose from Applications…": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "从「应用程序」中选择…"
+          }
+        }
+      }
+    },
+    "Choose from Running Apps…": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "从正在运行的应用中选择…"
+          }
+        }
+      }
+    },
+    "Choose the apps to proxy": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "选择要走代理的应用"
+          }
+        }
+      }
+    },
+    "Choosing a proxy turns on exclusion mode: every app goes through the proxy except those set to Direct.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "选择「代理」即为排除模式：除了设为「直连」的应用外，所有应用都走代理。"
+          }
+        }
+      }
+    },
+    "Clear": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "清空"
+          }
+        }
+      }
+    },
+    "Click Add in the toolbar and choose the apps or command-line tools to proxy.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "点击右上角的「添加」，选择要走代理的应用或命令行工具。"
+          }
+        }
+      }
+    },
+    "Click Add in the toolbar to set up a SOCKS5 or HTTP proxy.\nLocal clients such as Clash or v2ray usually listen on a port like 127.0.0.1:7890.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "点击右上角的「添加」配置 SOCKS5 或 HTTP 代理。\n本机运行的 Clash、v2ray 等客户端一般提供 127.0.0.1:7890 之类的端口。"
+          }
+        }
+      }
+    },
+    "Coexisting with Other VPN / TUN": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "与其他 VPN / TUN 共存"
+          }
+        }
+      }
+    },
+    "Configuration File": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "配置文件"
+          }
+        }
+      }
+    },
+    "Connect to local network addresses directly": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "局域网地址直连"
+          }
+        }
+      }
+    },
+    "Connection timeout": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "连接超时"
+          }
+        }
+      }
+    },
+    "Connections": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "连接"
+          }
+        }
+      }
+    },
+    "Copy": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "复制"
+          }
+        }
+      }
+    },
+    "Default Action": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "默认动作"
+          }
+        }
+      }
+    },
+    "Delete": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "删除"
+          }
+        }
+      }
+    },
+    "Delete \"%@\"?": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "删除「%@」？"
+          }
+        }
+      }
+    },
+    "Destination": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "目标"
+          }
+        }
+      }
+    },
+    "Detected": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "检测结果"
+          }
+        }
+      }
+    },
+    "Detected: %@. ProxyAppX's connections to remote proxies (%@) also pass through it and may be proxied twice. Turn on \"Upstream connections bypass other VPN / TUN\" under Settings › Coexisting with Other VPN / TUN, or add %@ to your Clash rules.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "Detected: %1$@. ProxyAppX's connections to remote proxies (%2$@) also pass through it and may be proxied twice. Turn on \"Upstream connections bypass other VPN / TUN\" under Settings › Coexisting with Other VPN / TUN, or add %3$@ to your Clash rules."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "检测到 %@。ProxyAppX 连接远程代理（%@）的流量会再经过它，可能被它二次代理。可在「设置 › 与其他 VPN / TUN 共存」中开启「上游连接绕过其他 VPN / TUN」，或在 Clash 规则中加入 %@。"
+          }
+        }
+      }
+    },
+    "Direct": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "直连"
+          }
+        }
+      }
+    },
+    "Direct (recommended)": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "直连（推荐）"
+          }
+        }
+      }
+    },
+    "Disable": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "停用"
+          }
+        }
+      }
+    },
+    "Download": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "下载"
+          }
+        }
+      }
+    },
+    "Duration": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "时长"
+          }
+        }
+      }
+    },
+    "Edit…": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "编辑…"
+          }
+        }
+      }
+    },
+    "Enable": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "启用"
+          }
+        }
+      }
+    },
+    "Enable this rule": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "启用此规则"
+          }
+        }
+      }
+    },
+    "Enabled": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "启用"
+          }
+        }
+      }
+    },
+    "Enabled (%@)": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已启用（%@）"
+          }
+        }
+      }
+    },
+    "Ended": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "结束"
+          }
+        }
+      }
+    },
+    "Error: %@": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "错误：%@"
+          }
+        }
+      }
+    },
+    "Errors": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "错误"
+          }
+        }
+      }
+    },
+    "Events from the network extension show up here.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "网络扩展的事件会显示在这里。"
+          }
+        }
+      }
+    },
+    "Every process that recently used the network matched a rule.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "最近联网的进程都已命中规则。"
+          }
+        }
+      }
+    },
+    "Export failed: %@": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "导出失败：%@"
+          }
+        }
+      }
+    },
+    "Exported files do not include passwords. Importing replaces all current servers and rules.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "导出的文件不包含密码。导入会替换当前所有服务器和规则。"
+          }
+        }
+      }
+    },
+    "Export…": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "导出…"
+          }
+        }
+      }
+    },
+    "Extension version": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "扩展版本"
+          }
+        }
+      }
+    },
+    "Failed": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "失败"
+          }
+        }
+      }
+    },
+    "Failed to read the proxy configuration: %@": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "读取代理配置失败：%@"
+          }
+        }
+      }
+    },
+    "Failed to remove the configuration: %@": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "移除配置失败：%@"
+          }
+        }
+      }
+    },
+    "Failed to start: %@": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "启动失败：%@"
+          }
+        }
+      }
+    },
+    "Failed to update the configuration: %@": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "更新配置失败：%@"
+          }
+        }
+      }
+    },
+    "Fell back to direct": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "回落直连"
+          }
+        }
+      }
+    },
+    "Follow System": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "跟随系统"
+          }
+        }
+      }
+    },
+    "General": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "通用"
+          }
+        }
+      }
+    },
+    "Get Started": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "开始使用"
+          }
+        }
+      }
+    },
+    "Hand fake IPs without a hostname to the TUN (recommended)": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "fake-IP 无域名时交给 TUN 处理（推荐）"
+          }
+        }
+      }
+    },
+    "Hide system processes": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "隐藏系统进程"
+          }
+        }
+      }
+    },
+    "Hold ⌘ to select several": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "可按住 ⌘ 多选"
+          }
+        }
+      }
+    },
+    "IP address or domain": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "IP 或域名"
+          }
+        }
+      }
+    },
+    "Identifier": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "标识"
+          }
+        }
+      }
+    },
+    "Import failed: %@": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "导入失败：%@"
+          }
+        }
+      }
+    },
+    "Import…": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "导入…"
+          }
+        }
+      }
+    },
+    "Info": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "信息"
+          }
+        }
+      }
+    },
+    "Install": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "安装"
+          }
+        }
+      }
+    },
+    "Install the network extension": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "安装网络扩展"
+          }
+        }
+      }
+    },
+    "Installation failed": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "安装失败"
+          }
+        }
+      }
+    },
+    "Installing…": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在安装…"
+          }
+        }
+      }
+    },
+    "Invalid code signature. The system extension must be signed with a valid certificate and a provisioning profile that includes the Network Extension capability.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "代码签名无效。系统扩展必须用有效证书和包含 Network Extension 能力的描述文件签名。"
+          }
+        }
+      }
+    },
+    "Invalid configuration": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "配置无效"
+          }
+        }
+      }
+    },
+    "Invalid session type": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "无效的会话类型"
+          }
+        }
+      }
+    },
+    "Keep system processes direct": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "系统进程仍然直连"
+          }
+        }
+      }
+    },
+    "Language": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "语言"
+          }
+        }
+      }
+    },
+    "Launch ProxyAppX at login": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "登录时启动 ProxyAppX"
+          }
+        }
+      }
+    },
+    "Level": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "级别"
+          }
+        }
+      }
+    },
+    "Logs": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "日志"
+          }
+        }
+      }
+    },
+    "Matching": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "匹配"
+          }
+        }
+      }
+    },
+    "Monitoring": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "监控"
+          }
+        }
+      }
+    },
+    "Move ProxyAppX.app to the Applications folder (/Applications) first, then open it again.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "请先把 ProxyAppX.app 移到「应用程序」文件夹（/Applications），再重新打开它。"
+          }
+        }
+      }
+    },
+    "Name": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "名称"
+          }
+        }
+      }
+    },
+    "Network Extension": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "网络扩展"
+          }
+        }
+      }
+    },
+    "No Active Connections": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "暂无活动连接"
+          }
+        }
+      }
+    },
+    "No App Rules Yet": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "还没有应用规则"
+          }
+        }
+      }
+    },
+    "No Logs": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "暂无日志"
+          }
+        }
+      }
+    },
+    "No Proxy Servers Yet": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "还没有代理服务器"
+          }
+        }
+      }
+    },
+    "No Unmatched Apps": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "暂无未匹配的应用"
+          }
+        }
+      }
+    },
+    "No VPN or TUN is carrying public traffic": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未检测到接管公网流量的 VPN / TUN"
+          }
+        }
+      }
+    },
+    "No app rules are enabled, so all traffic currently goes direct.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "还没有启用的应用规则，目前所有流量都直连。"
+          }
+        }
+      }
+    },
+    "No proxy server has been added yet.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "还没有添加代理服务器。"
+          }
+        }
+      }
+    },
+    "Not configured": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未配置"
+          }
+        }
+      }
+    },
+    "Not installed": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未安装"
+          }
+        }
+      }
+    },
+    "Nothing Yet": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "暂无记录"
+          }
+        }
+      }
+    },
+    "OK": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "好"
+          }
+        }
+      }
+    },
+    "Off": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已停止"
+          }
+        }
+      }
+    },
+    "On": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "启用"
+          }
+        }
+      }
+    },
+    "Once it is on, connections taken over by ProxyAppX show up here live.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "启用后，这里会实时显示被接管的连接。"
+          }
+        }
+      }
+    },
+    "Once it is on, processes that recently used the network without matching any rule are listed here.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "启用后，这里会列出最近联网、但没有命中任何规则的进程。"
+          }
+        }
+      }
+    },
+    "Only proxied or blocked connections, and connections matching a Direct rule, are listed.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "只显示被代理或阻断的连接，以及命中「直连」规则的连接。"
+          }
+        }
+      }
+    },
+    "Open Main Window": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "打开主窗口"
+          }
+        }
+      }
+    },
+    "Open System Settings": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "打开系统设置"
+          }
+        }
+      }
+    },
+    "Open System Settings › General › Login Items & Extensions › Network Extensions and allow ProxyAppX.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "请打开「系统设置 › 通用 › 登录项与扩展 › 网络扩展」，允许 ProxyAppX。"
+          }
+        }
+      }
+    },
+    "Or let the extension through in your Clash rules:": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "也可以在 Clash 规则中放行本扩展："
+          }
+        }
+      }
+    },
+    "Overview": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "概览"
+          }
+        }
+      }
+    },
+    "Password": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "密码"
+          }
+        }
+      }
+    },
+    "Path": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "路径"
+          }
+        }
+      }
+    },
+    "Per-App Proxy": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "按应用代理"
+          }
+        }
+      }
+    },
+    "Port": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "端口"
+          }
+        }
+      }
+    },
+    "Protocol": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "协议"
+          }
+        }
+      }
+    },
+    "Proxied / blocked": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已代理 / 阻断"
+          }
+        }
+      }
+    },
+    "Proxy": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "代理"
+          }
+        }
+      }
+    },
+    "Proxy (%@)": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "代理（%@）"
+          }
+        }
+      }
+    },
+    "Proxy Is Off": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "代理未运行"
+          }
+        }
+      }
+    },
+    "Proxy Servers": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "代理服务器"
+          }
+        }
+      }
+    },
+    "Proxy server": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "代理服务器"
+          }
+        }
+      }
+    },
+    "Proxy: %@": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "代理：%@"
+          }
+        }
+      }
+    },
+    "ProxyAppX": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ProxyAppX"
+          }
+        }
+      }
+    },
+    "ProxyAppX Per-App Proxy": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ProxyAppX 按应用代理"
+          }
+        }
+      }
+    },
+    "ProxyAppX-Configuration.json": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ProxyAppX-配置.json"
+          }
+        }
+      }
+    },
+    "Quit": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "退出"
+          }
+        }
+      }
+    },
+    "Reachable · %lld ms": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "可用 · %lld ms"
+          }
+        }
+      }
+    },
+    "Recently Closed": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "最近结束"
+          }
+        }
+      }
+    },
+    "Reconnecting…": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在重连…"
+          }
+        }
+      }
+    },
+    "Reinstall": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "重新安装"
+          }
+        }
+      }
+    },
+    "Relaunch Now": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "立即重新启动"
+          }
+        }
+      }
+    },
+    "Relaunch ProxyAppX to apply the new language.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "重新启动 ProxyAppX 后生效。"
+          }
+        }
+      }
+    },
+    "Requires authentication": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "需要认证"
+          }
+        }
+      }
+    },
+    "Restart your Mac to finish": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "需要重启电脑后生效"
+          }
+        }
+      }
+    },
+    "Running": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "运行中"
+          }
+        }
+      }
+    },
+    "SOCKS5 and HTTP proxies are supported": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "支持 SOCKS5 和 HTTP 代理"
+          }
+        }
+      }
+    },
+    "Save": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "保存"
+          }
+        }
+      }
+    },
+    "Search apps": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "搜索应用"
+          }
+        }
+      }
+    },
+    "Send hostnames to the proxy for resolution": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "优先把域名交给代理解析"
+          }
+        }
+      }
+    },
+    "Server": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "服务器地址"
+          }
+        }
+      }
+    },
+    "Server missing": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "服务器缺失"
+          }
+        }
+      }
+    },
+    "Server supports UDP relay (UDP ASSOCIATE)": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "服务器支持 UDP 转发（UDP ASSOCIATE）"
+          }
+        }
+      }
+    },
+    "Set Action": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "设置动作"
+          }
+        }
+      }
+    },
+    "Settings": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "设置"
+          }
+        }
+      }
+    },
+    "Show": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "显示"
+          }
+        }
+      }
+    },
+    "Show all %lld rules": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "查看全部 %lld 条规则"
+          }
+        }
+      }
+    },
+    "Show in Finder": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在访达中显示"
+          }
+        }
+      }
+    },
+    "Signing identifier / bundle ID": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "签名标识 / Bundle ID"
+          }
+        }
+      }
+    },
+    "Some Apps Already Have Rules": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "部分应用已存在"
+          }
+        }
+      }
+    },
+    "Starting…": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在启动…"
+          }
+        }
+      }
+    },
+    "Status": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "状态"
+          }
+        }
+      }
+    },
+    "Stopping…": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在停止…"
+          }
+        }
+      }
+    },
+    "Test": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "测试"
+          }
+        }
+      }
+    },
+    "Test Connection": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "测试连接"
+          }
+        }
+      }
+    },
+    "The configuration is disabled": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "配置已被禁用"
+          }
+        }
+      }
+    },
+    "The configuration is out of date. Try again.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "配置已过期，请重试"
+          }
+        }
+      }
+    },
+    "The default action proxies through \"%@\" on this Mac. Add a Direct rule for the local proxy client (such as Clash or v2ray); otherwise its own outgoing traffic is proxied again and loops.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "默认动作是代理到本机的「%@」。请给本机的代理客户端（如 Clash、v2ray）添加一条「直连」规则，否则它自己的出站流量会被再次代理，形成回环。"
+          }
+        }
+      }
+    },
+    "The extension did not respond": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "扩展无响应"
+          }
+        }
+      }
+    },
+    "The extension failed to start": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "扩展启动失败"
+          }
+        }
+      }
+    },
+    "The extension is not running": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "扩展未运行"
+          }
+        }
+      }
+    },
+    "The proxy is off.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "代理未运行。"
+          }
+        }
+      }
+    },
+    "The proxy session keeps disconnecting, so automatic reconnection has stopped. Check the logs, then turn it on again.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "代理会话反复断开，已停止自动重连。请查看日志后手动启用。"
+          }
+        }
+      }
+    },
+    "The request was canceled.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "请求已取消。"
+          }
+        }
+      }
+    },
+    "The system extension entitlement is missing. Check the signing configuration (Config/Signing.xcconfig).": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "缺少系统扩展 entitlement，请检查签名配置（Config/Signing.xcconfig）。"
+          }
+        }
+      }
+    },
+    "The system extension failed validation (signature, Info.plist or entitlements do not match).": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "系统扩展校验失败（签名、Info.plist 或 entitlement 不匹配）。"
+          }
+        }
+      }
+    },
+    "The system extension was not found inside the app. Rebuild it.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "App 内没有找到系统扩展，请重新构建。"
+          }
+        }
+      }
+    },
+    "There are no proxy servers yet. Add one under Proxy Servers first.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "还没有代理服务器，请先到「代理服务器」中添加。"
+          }
+        }
+      }
+    },
+    "These apps already have rules and were skipped: %@": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "以下应用已有规则，已跳过：%@"
+          }
+        }
+      }
+    },
+    "This cannot be undone.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "此操作不可撤销。"
+          }
+        }
+      }
+    },
+    "This stops the proxy and removes the proxy configuration and the network extension from macOS. Your rules and servers are kept.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "会停止代理并从系统中移除代理配置和网络扩展。你的规则和服务器配置会保留。"
+          }
+        }
+      }
+    },
+    "Tip: press ⌘⇧G to type a path, such as /usr/bin/curl or /opt/homebrew/bin/git": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "提示：按 ⌘⇧G 可以输入路径，例如 /usr/bin/curl 或 /opt/homebrew/bin/git"
+          }
+        }
+      }
+    },
+    "Total %@": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "累计 %@"
+          }
+        }
+      }
+    },
+    "Turn Off": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "停用"
+          }
+        }
+      }
+    },
+    "Turn On": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "启用"
+          }
+        }
+      }
+    },
+    "Type": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "类型"
+          }
+        }
+      }
+    },
+    "UDP": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "UDP"
+          }
+        }
+      }
+    },
+    "UDP bypasses the proxy and may reveal your real IP address.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "UDP 不经过代理，可能暴露真实 IP。"
+          }
+        }
+      }
+    },
+    "UDP for the default action": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "默认动作的 UDP 流量"
+          }
+        }
+      }
+    },
+    "UDP traffic": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "UDP 流量"
+          }
+        }
+      }
+    },
+    "UDP will be relayed with SOCKS5 UDP ASSOCIATE.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "UDP 将通过 SOCKS5 UDP ASSOCIATE 转发。"
+          }
+        }
+      }
+    },
+    "Uninstall": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "卸载"
+          }
+        }
+      }
+    },
+    "Uninstall Extension…": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "卸载扩展…"
+          }
+        }
+      }
+    },
+    "Uninstall the network extension?": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "卸载网络扩展？"
+          }
+        }
+      }
+    },
+    "Unknown": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未知"
+          }
+        }
+      }
+    },
+    "Unknown configuration error": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未知配置错误"
+          }
+        }
+      }
+    },
+    "Unmatched Apps": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未匹配的应用"
+          }
+        }
+      }
+    },
+    "Upload": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "上传"
+          }
+        }
+      }
+    },
+    "Upstream connections bypass other VPN / TUN": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "上游连接绕过其他 VPN / TUN"
+          }
+        }
+      }
+    },
+    "Username": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "用户名"
+          }
+        }
+      }
+    },
+    "VPN and proxy cores (such as Clash's) bind their own connections to the physical interface to escape their TUN. Taking such a connection over drops the binding and creates a loop.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "VPN / 代理内核（如 Clash 内核）会把自己的连接绑定到物理网卡来绕开 TUN；这类连接被接管后会丢失绑定，形成回环。"
+          }
+        }
+      }
+    },
+    "Waiting for your approval in System Settings": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "等待你在系统设置中允许"
+          }
+        }
+      }
+    },
+    "Warnings": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "警告"
+          }
+        }
+      }
+    },
+    "When on, rules can choose \"Relay via SOCKS5\" for UDP. Dante, Shadowsocks local clients and Clash usually support it.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "开启后，规则的 UDP 策略可选择「经 SOCKS5 转发」。Dante、Shadowsocks 本地端、Clash 等通常支持。"
+          }
+        }
+      }
+    },
+    "When on, the extension reaches proxy servers over the physical interface, so tools like Clash do not process that traffic again. Leave it off if your proxy server is only reachable through a company VPN.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "开启后，扩展直接经物理网卡连接代理服务器，不会再被 Clash 等工具处理一次。如果代理服务器只能通过公司 VPN 访问，请不要开启。"
+          }
+        }
+      }
+    },
+    "When the destination is a fake IP in 198.18.0.0/15 and no hostname is known, a remote proxy cannot connect; the connection goes back to the tool that issued the fake IP. Proxies on this Mac are not affected.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "目标是 198.18.0.0/15 的 fake-IP、又拿不到域名时，远程代理无法连接；这时把连接交还给制造 fake-IP 的工具处理。上游代理在本机时不受影响。"
+          }
+        }
+      }
+    },
+    "When the proxy is unavailable": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "代理不可用时"
+          }
+        }
+      }
+    },
+    "With UDP blocked, browsers and similar apps fall back from QUIC to TCP automatically, so traffic still goes through the proxy and nothing leaks.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "阻断后，浏览器等应用会自动从 QUIC 回落到 TCP，流量仍经过代理，不会泄漏。"
+          }
+        }
+      }
+    },
+    "Works with .app bundles and command-line tools such as curl and git": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "支持 .app 和命令行工具（如 curl、git）"
+          }
+        }
+      }
+    },
+    "e.g. Office proxy": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "例如：公司代理"
+          }
+        }
+      }
+    },
+    "· running for %@": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "· 已运行 %@"
+          }
+        }
+      }
+    }
+  },
+  "version": "1.0"
+}

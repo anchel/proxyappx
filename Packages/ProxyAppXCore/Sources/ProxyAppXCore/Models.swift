@@ -106,9 +106,9 @@ public enum UDPPolicy: String, Codable, CaseIterable, Sendable, Identifiable {
 
     public var displayName: String {
         switch self {
-        case .block: return "阻断（推荐）"
-        case .direct: return "直连"
-        case .proxy: return "经 SOCKS5 转发"
+        case .block: return L10n.t("Block (recommended)", "阻断（推荐）")
+        case .direct: return L10n.t("Direct", "直连")
+        case .proxy: return L10n.t("Relay via SOCKS5", "经 SOCKS5 转发")
         }
     }
 }
@@ -168,8 +168,8 @@ public enum FailurePolicy: String, Codable, CaseIterable, Sendable, Identifiable
 
     public var displayName: String {
         switch self {
-        case .block: return "阻断连接（推荐）"
-        case .direct: return "回落直连"
+        case .block: return L10n.t("Block the connection (recommended)", "阻断连接（推荐）")
+        case .direct: return L10n.t("Fall back to direct", "回落直连")
         }
     }
 }
@@ -246,6 +246,8 @@ public struct ProxyAppXConfig: Codable, Hashable, Sendable {
     public static let currentVersion = 1
 
     public var version: Int
+    /// App 当前的界面语言；扩展据此生成日志和错误信息的语言。
+    public var language: AppLanguage?
     public var servers: [ProxyServer]
     public var rules: [AppRule]
     public var settings: GeneralSettings
@@ -261,11 +263,12 @@ public struct ProxyAppXConfig: Codable, Hashable, Sendable {
         self.settings = settings
     }
 
-    enum CodingKeys: String, CodingKey { case version, servers, rules, settings }
+    enum CodingKeys: String, CodingKey { case version, language, servers, rules, settings }
 
     public init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         version = try c.decodeIfPresent(Int.self, forKey: .version) ?? Self.currentVersion
+        language = try? c.decodeIfPresent(AppLanguage.self, forKey: .language)
         servers = try c.decodeIfPresent([ProxyServer].self, forKey: .servers) ?? []
         rules = try c.decodeIfPresent([AppRule].self, forKey: .rules) ?? []
         settings = try c.decodeIfPresent(GeneralSettings.self, forKey: .settings) ?? GeneralSettings()

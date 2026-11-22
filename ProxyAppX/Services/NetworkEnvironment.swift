@@ -17,9 +17,10 @@ final class NetworkEnvironment {
         let isFakeIP: Bool
 
         var summary: String {
-            let addr = address.map { "（\($0)）" } ?? ""
-            let kind = isFakeIP ? "fake-IP 模式的 TUN，可能是 Clash / FlClash / Surge" : "VPN 或 TUN 工具"
-            return "\(interface)\(addr) 正在接管公网流量：\(kind)"
+            let addr = address.map { " (\($0))" } ?? ""
+            return isFakeIP
+                ? String(localized: "\(interface)\(addr) is carrying public traffic: a fake-IP TUN, probably Clash, FlClash or Surge")
+                : String(localized: "\(interface)\(addr) is carrying public traffic: a VPN or TUN tool")
         }
     }
 

@@ -8,7 +8,7 @@ public enum Upstream: Sendable, Equatable {
 
     public var label: String {
         switch self {
-        case .direct: return "直连"
+        case .direct: return L10n.t("Direct", "直连")
         case let .proxy(s): return s.name.isEmpty ? s.endpointDescription : s.name
         }
     }
@@ -158,7 +158,7 @@ public final class SOCKS5UDPAssociation: @unchecked Sendable {
 
     public static func open(server: ProxyServer, timeout: TimeInterval, avoidTunnels: Bool = false,
                             queue: DispatchQueue? = nil) async throws -> SOCKS5UDPAssociation {
-        guard server.type == .socks5 else { throw ProxyError.unsupported("HTTP 代理不支持 UDP") }
+        guard server.type == .socks5 else { throw ProxyError.unsupported(L10n.t("HTTP proxies cannot relay UDP", "HTTP 代理不支持 UDP")) }
         let control = AsyncConnection(
             endpoint: TargetAddress(host: server.host, port: server.port).nwEndpoint,
             parameters: AsyncConnection.tcpParameters(connectTimeout: timeout, avoidTunnels: avoidTunnels),

@@ -1,5 +1,6 @@
 name: ProxyAppX
 options:
+  developmentLanguage: en
   deploymentTarget:
     macOS: "15.0"
   createIntermediateGroups: true
@@ -19,7 +20,7 @@ settings:
     DEAD_CODE_STRIPPING: YES
     ENABLE_USER_SCRIPT_SANDBOXING: YES
     LOCALIZATION_PREFERS_STRING_CATALOGS: YES
-    DEVELOPMENT_LANGUAGE: zh-Hans
+    SWIFT_EMIT_LOC_STRINGS: YES
 targets:
   ProxyAppX:
     type: application

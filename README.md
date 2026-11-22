@@ -6,8 +6,6 @@ Pick an app and send **all of its network traffic** through a SOCKS5 or HTTP pro
 
 Full product requirements (in Chinese): [docs/PRD.md](docs/PRD.md).
 
-> The app's interface is currently in Simplified Chinese. UI labels below are given in English with the Chinese text in parentheses.
-
 ## Download and install
 
 1. Download the latest `ProxyAppX-<version>.zip` from [Releases](https://github.com/anchel/proxyappx/releases). It is signed with Developer ID and notarized by Apple.
@@ -24,8 +22,9 @@ Requires macOS 15 or later.
 - **Leak protection**: connections fail closed when the proxy is down; UDP is blocked by default so browsers fall back from QUIC to TCP; hostnames are sent to the proxy for remote resolution
 - **Exclusion mode**: send every app through the proxy except the ones you mark as Direct
 - **Coexists with Clash / FlClash and other TUN tools**: see [below](#coexisting-with-clash--flclash-and-other-tun-tools)
-- **Monitoring**: live connections, upload/download rates, logs, and an "Unmatched apps" (未匹配的应用) page that surfaces processes you may want to add rules for
+- **Monitoring**: live connections, upload/download rates, logs, and an "Unmatched Apps" page that surfaces processes you may want to add rules for
 - **Menu bar**: one-click on/off, launch at login, configuration import/export
+- **English and Simplified Chinese UI**: follows the system language, or pick one under Settings › General › Language
 
 ## How it works
 
@@ -90,10 +89,10 @@ You can also run `xcodegen generate` and work in `ProxyAppX.xcodeproj` with Xcod
 
 ### 4. First run
 
-1. On the Overview page, click Install (安装) for the network extension, then allow ProxyAppX in **System Settings › General › Login Items & Extensions › Network Extensions**
+1. On the Overview page, click Install for the network extension, then allow ProxyAppX in **System Settings › General › Login Items & Extensions › Network Extensions**
 2. The first time you turn it on, macOS asks to allow adding a proxy configuration; allow it
-3. Under Proxy Servers (代理服务器), add a server and click Test (测试) to make sure it works
-4. Under App Rules (应用规则), add an app and pick the proxy server
+3. Under Proxy Servers, add a server and click Test to make sure it works
+4. Under App Rules, add an app and pick the proxy server
 5. Turn on the switch
 
 To verify, add a proxy rule for `/usr/bin/curl`, then run:
@@ -154,7 +153,7 @@ App → ① ProxyAppX (decides per app)
                     (local upstream: straight there; remote upstream: also goes through utun by default)
 ```
 
-ProxyAppX handles the cases where the two would interfere. You can adjust these under Settings › Coexisting with other VPN / TUN (设置 › 与其他 VPN / TUN 共存):
+ProxyAppX handles the cases where the two would interfere. You can adjust these under Settings › Coexisting with Other VPN / TUN:
 
 - **Bound flows go direct** (on by default): Clash's core binds its own connections to the physical interface to escape its TUN. These flows are always passed through, so exclusion mode cannot create a loop.
 - **Fake-IP fallback** (on by default): when the destination is a 198.18.x.x fake IP, no hostname is available, and the upstream is remote, the connection is handed back to Clash. Whenever a hostname is available, it is always sent upstream.
@@ -165,12 +164,11 @@ Note: with Clash in "system proxy" mode, apps that honor the system proxy connec
 
 ## Known limitations
 
-- **DNS does not go through the proxy**: macOS attributes an app's DNS queries (port 53) to the app itself, so to keep name resolution working, DNS always goes direct. With "Send hostnames to the proxy for resolution" (优先把域名交给代理解析, on by default), the connection itself still reaches the proxy by hostname, but a local DNS query still happens.
+- **DNS does not go through the proxy**: macOS attributes an app's DNS queries (port 53) to the app itself, so to keep name resolution working, DNS always goes direct. With "Send hostnames to the proxy for resolution" (on by default), the connection itself still reaches the proxy by hostname, but a local DNS query still happens.
 - Traffic sent on an app's behalf by shared system processes (Safari, background downloads) is attributed however macOS attributes it, which may not match the app.
 - In exclusion mode, if a local proxy client (Clash and the like) does not bind its own connections to an interface (for example, TUN mode is off), add a Direct rule for it; the app warns you about this.
 - UDP can only be relayed through SOCKS5 servers that support UDP ASSOCIATE.
-- The interface is currently available in Simplified Chinese only.
 
 ## Uninstall
 
-In the app, go to Settings › Network Extension (设置 › 网络扩展) and click Uninstall extension (卸载扩展), then delete `/Applications/ProxyAppX.app`. Configuration lives in `~/Library/Application Support/ProxyAppX/`; proxy passwords are stored in the login keychain under the service name `ProxyAppX.ProxyServer`.
+In the app, go to Settings › Network Extension and click Uninstall Extension, then delete `/Applications/ProxyAppX.app`. Configuration lives in `~/Library/Application Support/ProxyAppX/`; proxy passwords are stored in the login keychain under the service name `ProxyAppX.ProxyServer`.

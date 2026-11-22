@@ -51,18 +51,18 @@ public struct Decision: Sendable, Equatable {
 
         public var displayName: String {
             switch self {
-            case .rule: return "命中规则"
-            case .defaultAction: return "默认动作"
-            case .loopback: return "环回地址"
-            case .localNetwork: return "局域网绕过"
-            case .missingServer: return "代理服务器不存在"
-            case .udpPolicy: return "UDP 策略"
-            case .udpUnsupported: return "代理不支持 UDP"
-            case .systemProcess: return "系统进程"
-            case .proxyServer: return "代理服务器地址"
-            case .dns: return "DNS 查询"
-            case .boundInterface: return "已绑定网卡"
-            case .fakeIP: return "fake-IP 交给 TUN"
+            case .rule: return L10n.t("Matched rule", "命中规则")
+            case .defaultAction: return L10n.t("Default action", "默认动作")
+            case .loopback: return L10n.t("Loopback", "环回地址")
+            case .localNetwork: return L10n.t("Local network bypass", "局域网绕过")
+            case .missingServer: return L10n.t("Proxy server missing", "代理服务器不存在")
+            case .udpPolicy: return L10n.t("UDP policy", "UDP 策略")
+            case .udpUnsupported: return L10n.t("Proxy can't relay UDP", "代理不支持 UDP")
+            case .systemProcess: return L10n.t("System process", "系统进程")
+            case .proxyServer: return L10n.t("Proxy server address", "代理服务器地址")
+            case .dns: return L10n.t("DNS query", "DNS 查询")
+            case .boundInterface: return L10n.t("Bound to an interface", "已绑定网卡")
+            case .fakeIP: return L10n.t("Fake IP handed to TUN", "fake-IP 交给 TUN")
             }
         }
     }

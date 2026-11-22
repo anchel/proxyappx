@@ -1,0 +1,24 @@
+{
+  "sourceLanguage": "en",
+  "strings": {
+    "NSSystemExtensionUsageDescription": {
+      "comment": "Shown by macOS when asking the user to allow the network extension.",
+      "extractionState": "extracted_with_value",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "ProxyAppX installs a network extension so it can send the network traffic of the apps you choose through your proxy server."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ProxyAppX 需要安装网络扩展，才能把你指定的应用的网络流量转发到代理服务器。"
+          }
+        }
+      }
+    }
+  },
+  "version": "1.0"
+}

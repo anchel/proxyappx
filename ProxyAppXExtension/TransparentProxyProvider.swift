@@ -15,6 +15,8 @@ private final class EngineStore: @unchecked Sendable {
     }
 
     func update(_ configuration: ProxyAppXConfig) {
+        // 日志和错误信息使用 App 当前的界面语言
+        if let language = configuration.language { L10n.language = language }
         let e = RuleEngine(configuration: configuration)
         lock.lock()
         _engine = e
@@ -33,7 +35,9 @@ final class TransparentProxyProvider: NETransparentProxyProvider, NEAppProxyUDPF
     override func startProxy(options: [String: Any]? = nil, completionHandler: @escaping (Error?) -> Void) {
         let configuration = loadConfiguration(options: options)
         store.update(configuration)
-        tracker.log(.info, "扩展启动：\(configuration.servers.count) 个代理，\(configuration.rules.filter(\.enabled).count) 条启用的规则")
+        let servers = configuration.servers.count, enabled = configuration.rules.filter(\.enabled).count
+        tracker.log(.info, L10n.t("Extension started: \(servers) proxies, \(enabled) enabled rules",
+                                  "扩展启动：\(servers) 个代理，\(enabled) 条启用的规则"))
 
         let settings = NETransparentProxyNetworkSettings(tunnelRemoteAddress: "127.0.0.1")
         settings.includedNetworkRules = [
@@ -45,14 +49,15 @@ final class TransparentProxyProvider: NETransparentProxyProvider, NEAppProxyUDPF
 
         setTunnelNetworkSettings(settings) { [tracker] error in
             if let error {
-                tracker.log(.error, "设置网络规则失败：\(error.localizedDescription)")
+                tracker.log(.error, L10n.t("Failed to apply network rules: \(error.localizedDescription)",
+                                             "设置网络规则失败：\(error.localizedDescription)"))
             }
             completionHandler(error)
         }
     }
 
     override func stopProxy(with reason: NEProviderStopReason, completionHandler: @escaping () -> Void) {
-        tracker.log(.info, "扩展停止（原因 \(reason.rawValue)）")
+        tracker.log(.info, L10n.t("Extension stopped (reason \(reason.rawValue))", "扩展停止（原因 \(reason.rawValue)）"))
         completionHandler()
     }
 
@@ -67,10 +72,11 @@ final class TransparentProxyProvider: NETransparentProxyProvider, NEAppProxyUDPF
             do {
                 return try ProxyAppXConfig.decode(data)
             } catch {
-                tracker.log(.error, "配置解析失败：\(error.localizedDescription)")
+                tracker.log(.error, L10n.t("Failed to parse the configuration: \(error.localizedDescription)",
+                                          "配置解析失败：\(error.localizedDescription)"))
             }
         }
-        tracker.log(.warning, "没有找到配置，所有流量直连")
+        tracker.log(.warning, L10n.t("No configuration found; all traffic goes direct", "没有找到配置，所有流量直连"))
         return ProxyAppXConfig()
     }
 
@@ -82,7 +88,8 @@ final class TransparentProxyProvider: NETransparentProxyProvider, NEAppProxyUDPF
             switch try IPCRequest.decode(messageData) {
             case let .updateConfiguration(configuration):
                 store.update(configuration)
-                tracker.log(.info, "配置已更新：\(configuration.rules.filter(\.enabled).count) 条启用的规则")
+                let enabled = configuration.rules.filter(\.enabled).count
+                tracker.log(.info, L10n.t("Configuration updated: \(enabled) enabled rules", "配置已更新：\(enabled) 条启用的规则"))
                 response = .ok
             case let .status(logsAfter):
                 response = .status(tracker.snapshot(logsAfter: logsAfter, ruleCount: store.engine.configuration.rules.count))
@@ -91,7 +98,8 @@ final class TransparentProxyProvider: NETransparentProxyProvider, NEAppProxyUDPF
                 response = .ok
             }
         } catch {
-            response = .error("无法解析请求：\(error.localizedDescription)")
+            response = .error(L10n.t("Cannot parse the request: \(error.localizedDescription)",
+                                      "无法解析请求：\(error.localizedDescription)"))
         }
         completionHandler?(try? response.encoded())
     }
@@ -179,11 +187,13 @@ final class TransparentProxyProvider: NETransparentProxyProvider, NEAppProxyUDPF
         case .fakeIP:
             tracker.recordImmediate(snapshot(ctx, process, decision, verdict: .direct))
             tracker.logOnce(.warning, key: "fakeip:\(ctx.signingID)",
-                            "\(process.name) 连接 fake-IP \(ctx.destination) 时没有域名，远程代理无法解析，已交给 TUN 工具处理（此提示每个应用只显示一次）")
+                            L10n.t("\(process.name) connected to fake IP \(ctx.destination) without a hostname, which a remote proxy cannot resolve; handed to the TUN tool (shown once per app)",
+                                   "\(process.name) 连接 fake-IP \(ctx.destination) 时没有域名，远程代理无法解析，已交给 TUN 工具处理（此提示每个应用只显示一次）"))
         case .boundInterface where decision.rule != nil:
             tracker.recordImmediate(snapshot(ctx, process, decision, verdict: .direct))
             tracker.logOnce(.info, key: "bound:\(ctx.signingID)",
-                            "\(process.name) 的连接绑定了网卡，按「绑定网卡的连接直连」放行（此提示每个应用只显示一次）")
+                            L10n.t("\(process.name) bound its connection to an interface; passed through per \"Bound connections go direct\" (shown once per app)",
+                                   "\(process.name) 的连接绑定了网卡，按「绑定网卡的连接直连」放行（此提示每个应用只显示一次）"))
         case .defaultAction, .systemProcess, .boundInterface:
             tracker.recordUnmatched(
                 signingID: ctx.signingID, name: process.name, path: process.path,

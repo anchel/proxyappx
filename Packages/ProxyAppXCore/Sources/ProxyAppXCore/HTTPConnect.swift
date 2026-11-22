@@ -23,12 +23,12 @@ public enum HTTPConnect {
     /// 解析响应头（包含结尾的 `\r\n\r\n`）。2xx 视为成功。
     public static func parseResponse(_ header: Data) throws {
         guard let text = String(data: header, encoding: .utf8) ?? String(data: header, encoding: .isoLatin1) else {
-            throw ProxyError.protocolViolation("无法解码 HTTP 响应")
+            throw ProxyError.protocolViolation(L10n.t("Cannot decode the HTTP response", "无法解码 HTTP 响应"))
         }
         let statusLine = text.components(separatedBy: "\r\n").first ?? ""
         let parts = statusLine.split(separator: " ", maxSplits: 2, omittingEmptySubsequences: true)
         guard parts.count >= 2, parts[0].hasPrefix("HTTP/1."), let code = Int(parts[1]) else {
-            throw ProxyError.protocolViolation("不是 HTTP 代理：\(statusLine.prefix(80))")
+            throw ProxyError.protocolViolation(L10n.t("Not an HTTP proxy: \(statusLine.prefix(80))", "不是 HTTP 代理：\(statusLine.prefix(80))"))
         }
         switch code {
         case 200..<300:

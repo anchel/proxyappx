@@ -31,13 +31,13 @@ final class ProxyController {
 
     var statusTitle: String {
         switch status {
-        case .invalid: return "未配置"
-        case .disconnected: return "已停止"
-        case .connecting: return "正在启动…"
-        case .connected: return "运行中"
-        case .reasserting: return "正在重连…"
-        case .disconnecting: return "正在停止…"
-        @unknown default: return "未知"
+        case .invalid: return String(localized: "Not configured")
+        case .disconnected: return String(localized: "Off")
+        case .connecting: return String(localized: "Starting…")
+        case .connected: return String(localized: "Running")
+        case .reasserting: return String(localized: "Reconnecting…")
+        case .disconnecting: return String(localized: "Stopping…")
+        @unknown default: return String(localized: "Unknown")
         }
     }
 
@@ -66,7 +66,7 @@ final class ProxyController {
             manager = all.first { ($0.protocolConfiguration as? NETunnelProviderProtocol)?.providerBundleIdentifier == providerBundleIdentifier }
             status = manager?.connection.status ?? .invalid
         } catch {
-            lastError = "读取代理配置失败：\(error.localizedDescription)"
+            lastError = String(localized: "Failed to read the proxy configuration: \(error.localizedDescription)")
         }
     }
 
@@ -79,15 +79,15 @@ final class ProxyController {
         defer { isBusy = false }
         lastError = nil
         do {
-            let data = try configuration.encoded()
+            let data = try Self.withLanguage(configuration).encoded()
             let m = try await saveManager(configurationData: data)
             guard let session = m.connection as? NETunnelProviderSession else {
-                throw NSError(domain: "ProxyAppX", code: 1, userInfo: [NSLocalizedDescriptionKey: "无效的会话类型"])
+                throw NSError(domain: "ProxyAppX", code: 1, userInfo: [NSLocalizedDescriptionKey: String(localized: "Invalid session type")])
             }
             try session.startTunnel(options: [ProviderConfigurationKey.configuration: data as NSData])
             wantsEnabled = true
         } catch {
-            lastError = "启动失败：\(Self.describe(error))"
+            lastError = String(localized: "Failed to start: \(Self.describe(error))")
         }
     }
 
@@ -108,7 +108,7 @@ final class ProxyController {
         let now = Date()
         autoRestarts = autoRestarts.filter { now.timeIntervalSince($0) < 60 }
         guard autoRestarts.count < 5 else {
-            lastError = "代理会话反复断开，已停止自动重连。请查看日志后手动启用。"
+            lastError = String(localized: "The proxy session keeps disconnecting, so automatic reconnection has stopped. Check the logs, then turn it on again.")
             return
         }
         autoRestarts.append(now)
@@ -123,14 +123,14 @@ final class ProxyController {
     func apply(_ configuration: ProxyAppXConfig) async {
         guard manager != nil else { return }
         do {
-            let data = try configuration.encoded()
+            let data = try Self.withLanguage(configuration).encoded()
             _ = try await saveManager(configurationData: data)
             if isRunning {
-                let response = try await send(.updateConfiguration(configuration))
+                let response = try await send(.updateConfiguration(Self.withLanguage(configuration)))
                 if case let .error(message) = response { lastError = message }
             }
         } catch {
-            lastError = "更新配置失败：\(Self.describe(error))"
+            lastError = String(localized: "Failed to update the configuration: \(Self.describe(error))")
         }
     }
 
@@ -143,7 +143,7 @@ final class ProxyController {
             manager = nil
             status = .invalid
         } catch {
-            lastError = "移除配置失败：\(Self.describe(error))"
+            lastError = String(localized: "Failed to remove the configuration: \(Self.describe(error))")
         }
     }
 
@@ -151,7 +151,7 @@ final class ProxyController {
 
     func send(_ request: IPCRequest) async throws -> IPCResponse {
         guard let session = manager?.connection as? NETunnelProviderSession, session.status == .connected else {
-            throw NSError(domain: "ProxyAppX", code: 2, userInfo: [NSLocalizedDescriptionKey: "扩展未运行"])
+            throw NSError(domain: "ProxyAppX", code: 2, userInfo: [NSLocalizedDescriptionKey: String(localized: "The extension is not running")])
         }
         let payload = try request.encoded()
         return try await withCheckedThrowingContinuation { cont in
@@ -159,7 +159,7 @@ final class ProxyController {
                 try session.sendProviderMessage(payload) { data in
                     guard let data else {
                         cont.resume(throwing: NSError(domain: "ProxyAppX", code: 3,
-                                                      userInfo: [NSLocalizedDescriptionKey: "扩展无响应"]))
+                                                                                    userInfo: [NSLocalizedDescriptionKey: String(localized: "The extension did not respond")]))
                         return
                     }
                     do {
@@ -176,6 +176,13 @@ final class ProxyController {
 
     // MARK: 内部
 
+    /// 带上 App 当前的界面语言，让扩展用同一种语言写日志。
+    private static func withLanguage(_ configuration: ProxyAppXConfig) -> ProxyAppXConfig {
+        var c = configuration
+        c.language = L10n.language
+        return c
+    }
+
     private func saveManager(configurationData: Data) async throws -> NETransparentProxyManager {
         let m = manager ?? NETransparentProxyManager()
         let proto = (m.protocolConfiguration as? NETunnelProviderProtocol) ?? NETunnelProviderProtocol()
@@ -183,7 +190,7 @@ final class ProxyController {
         proto.serverAddress = "ProxyAppX"
         proto.providerConfiguration = [ProviderConfigurationKey.configuration: configurationData as NSData]
         m.protocolConfiguration = proto
-        m.localizedDescription = "ProxyAppX 按应用代理"
+        m.localizedDescription = String(localized: "ProxyAppX Per-App Proxy")
         m.isEnabled = true
         try await m.saveToPreferences()
         try await m.loadFromPreferences()
@@ -196,12 +203,12 @@ final class ProxyController {
         let ns = error as NSError
         if ns.domain == NEVPNErrorDomain, let code = NEVPNError.Code(rawValue: ns.code) {
             switch code {
-            case .configurationInvalid: return "配置无效"
-            case .configurationDisabled: return "配置已被禁用"
-            case .connectionFailed: return "扩展启动失败"
-            case .configurationStale: return "配置已过期，请重试"
-            case .configurationReadWriteFailed: return "无法读写系统配置（是否拒绝了「添加代理配置」的请求？）"
-            case .configurationUnknown: return "未知配置错误"
+            case .configurationInvalid: return String(localized: "Invalid configuration")
+            case .configurationDisabled: return String(localized: "The configuration is disabled")
+            case .connectionFailed: return String(localized: "The extension failed to start")
+            case .configurationStale: return String(localized: "The configuration is out of date. Try again.")
+            case .configurationReadWriteFailed: return String(localized: "Cannot read or write the system configuration. Did you deny the request to add a proxy configuration?")
+            case .configurationUnknown: return String(localized: "Unknown configuration error")
             @unknown default: break
             }
         }

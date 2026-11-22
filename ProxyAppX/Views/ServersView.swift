@@ -10,18 +10,18 @@ struct ServersView: View {
     var body: some View {
         Group {
             if model.store.configuration.servers.isEmpty {
-                EmptyStateView(systemImage: "server.rack", title: "还没有代理服务器",
-                               message: "点击右上角的「添加」配置 SOCKS5 或 HTTP 代理。\n本机运行的 Clash、v2ray 等客户端一般提供 127.0.0.1:7890 之类的端口。")
+                EmptyStateView(systemImage: "server.rack", title: "No Proxy Servers Yet",
+                               message: "Click Add in the toolbar to set up a SOCKS5 or HTTP proxy.\nLocal clients such as Clash or v2ray usually listen on a port like 127.0.0.1:7890.")
             } else {
                 list
             }
         }
-        .navigationTitle("代理服务器")
+        .navigationTitle(SidebarItem.servers.title)
         .toolbar {
             Button {
                 editing = ProxyServer(name: "", type: .socks5, host: "127.0.0.1", port: 1080)
             } label: {
-                Label("添加", systemImage: "plus")
+                Label("Add", systemImage: "plus")
             }
         }
         .sheet(item: $editing) { server in
@@ -32,15 +32,19 @@ struct ServersView: View {
         }
         .confirmationDialog(deleteTitle, isPresented: Binding(get: { pendingDelete != nil }, set: { if !$0 { pendingDelete = nil } }),
                             presenting: pendingDelete) { server in
-            Button("删除", role: .destructive) { model.store.deleteServer(server.id) }
+            Button("Delete", role: .destructive) { model.store.deleteServer(server.id) }
         } message: { server in
             let n = model.store.rulesUsing(server: server.id).count
-            Text(n > 0 ? "有 \(n) 条规则正在使用它，删除后这些规则会改为「直连」。" : "此操作不可撤销。")
+            if n > 0 {
+                Text("\(n) rules use this server. After it is deleted, they will switch to Direct.")
+            } else {
+                Text("This cannot be undone.")
+            }
         }
     }
 
     private var deleteTitle: String {
-        "删除「\(pendingDelete?.name ?? "")」？"
+        String(localized: "Delete \"\(pendingDelete?.name ?? "")\"?")
     }
 
     private var list: some View {
@@ -94,25 +98,25 @@ private struct ServerRow: View {
                 HStack(spacing: 6) {
                     Text(server.name.isEmpty ? server.endpointDescription : server.name).fontWeight(.medium)
                     if server.hasCredentials {
-                        Image(systemName: "lock.fill").font(.caption2).foregroundStyle(.secondary).help("需要认证")
+                        Image(systemName: "lock.fill").font(.caption2).foregroundStyle(.secondary).help("Requires authentication")
                     }
                     if server.canRelayUDP {
-                        Text("UDP").font(.caption2.bold()).padding(.horizontal, 4)
+                        Text(verbatim: "UDP").font(.caption2.bold()).padding(.horizontal, 4)
                             .background(.green.opacity(0.15), in: RoundedRectangle(cornerRadius: 3))
                             .foregroundStyle(.green)
                     }
                 }
-                Text("\(server.endpointDescription) · \(usage) 条规则在使用")
+                Text("\(server.endpointDescription) · used by \(usage) rules")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
             Spacer()
             resultView
-            Button("测试", action: onTest)
+            Button("Test", action: onTest)
                 .disabled(result == .running)
             Menu {
-                Button("编辑…", action: onEdit)
-                Button("删除", role: .destructive, action: onDelete)
+                Button("Edit…", action: onEdit)
+                Button("Delete", role: .destructive, action: onDelete)
             } label: {
                 Image(systemName: "ellipsis.circle")
             }
@@ -133,11 +137,11 @@ private struct ServerRow: View {
         case .running:
             ProgressView().controlSize(.small)
         case let .success(t):
-            Label("\(Int(t * 1000)) ms", systemImage: "checkmark.circle.fill")
+            Label { Text(verbatim: "\(Int(t * 1000)) ms") } icon: { Image(systemName: "checkmark.circle.fill") }
                 .foregroundStyle(.green)
                 .font(.callout.monospacedDigit())
         case let .failure(message):
-            Label("失败", systemImage: "xmark.circle.fill")
+            Label("Failed", systemImage: "xmark.circle.fill")
                 .foregroundStyle(.red)
                 .font(.callout)
                 .help(message)
@@ -186,26 +190,26 @@ struct ServerEditor: View {
         VStack(spacing: 0) {
             Form {
                 Section {
-                    TextField("名称", text: $server.name, prompt: Text("例如：公司代理"))
-                    Picker("类型", selection: $server.type) {
+                    TextField("Name", text: $server.name, prompt: Text("e.g. Office proxy"))
+                    Picker("Type", selection: $server.type) {
                         ForEach(ProxyProtocol.allCases) { Text($0.displayName).tag($0) }
                     }
                     .pickerStyle(.segmented)
                     .onChange(of: server.type) { old, new in
                         if portText == String(old.defaultPort) { portText = String(new.defaultPort) }
                     }
-                    TextField("服务器地址", text: $server.host, prompt: Text("IP 或域名"))
-                    TextField("端口", text: $portText)
+                    TextField("Server", text: $server.host, prompt: Text("IP address or domain"))
+                    TextField("Port", text: $portText)
                 }
-                Section("认证（可选）") {
-                    TextField("用户名", text: $server.username)
-                    SecureField("密码", text: $password)
+                Section("Authentication (optional)") {
+                    TextField("Username", text: $server.username)
+                    SecureField("Password", text: $password)
                 }
                 if server.type == .socks5 {
                     Section {
-                        Toggle("服务器支持 UDP 转发（UDP ASSOCIATE）", isOn: $server.supportsUDP)
+                        Toggle("Server supports UDP relay (UDP ASSOCIATE)", isOn: $server.supportsUDP)
                     } footer: {
-                        Text("开启后，规则的 UDP 策略可选择「经 SOCKS5 转发」。Dante、Shadowsocks 本地端、Clash 等通常支持。")
+                        Text("When on, rules can choose \"Relay via SOCKS5\" for UDP. Dante, Shadowsocks local clients and Clash usually support it.")
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
@@ -215,22 +219,24 @@ struct ServerEditor: View {
             .scrollDisabled(true)
 
             HStack {
-                Button("测试连接") { runTest() }
+                Button("Test Connection") { runTest() }
                     .disabled(!isValid || testResult == .running)
                 testView
                 Spacer()
-                Button("取消") { dismiss() }
+                Button("Cancel") { dismiss() }
                     .keyboardShortcut(.cancelAction)
-                Button(isNew ? "添加" : "保存") {
+                Button {
                     onSave(draft)
                     dismiss()
+                } label: {
+                    if isNew { Text("Add") } else { Text("Save") }
                 }
                 .keyboardShortcut(.defaultAction)
                 .disabled(!isValid)
             }
             .padding(20)
         }
-        .frame(width: 500)
+        .frame(width: 520)
     }
 
     @ViewBuilder
@@ -239,7 +245,7 @@ struct ServerEditor: View {
         case .none: EmptyView()
         case .running: ProgressView().controlSize(.small)
         case let .success(t):
-            Text("可用 · \(Int(t * 1000)) ms").foregroundStyle(.green).font(.callout)
+            Text("Reachable · \(Int(t * 1000)) ms").foregroundStyle(.green).font(.callout)
         case let .failure(m):
             Text(m).foregroundStyle(.red).font(.callout).lineLimit(2).help(m)
         }

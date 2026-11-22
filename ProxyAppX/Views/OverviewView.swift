@@ -17,7 +17,7 @@ struct OverviewView: View {
             .padding(24)
             .frame(maxWidth: 860, alignment: .leading)
         }
-        .navigationTitle("概览")
+        .navigationTitle(SidebarItem.overview.title)
     }
 
     // MARK: 顶部开关
@@ -30,14 +30,14 @@ struct OverviewView: View {
                 .frame(width: 56, height: 56)
                 .background(.quaternary.opacity(0.6), in: RoundedRectangle(cornerRadius: 14))
             VStack(alignment: .leading, spacing: 4) {
-                Text("按应用代理")
+                Text("Per-App Proxy")
                     .font(.title2.weight(.semibold))
                 HStack(spacing: 6) {
                     StatusDot(color: model.isRunning ? .green : (model.controller.isTransitioning ? .orange : .secondary))
                     Text(model.controller.statusTitle)
                         .foregroundStyle(.secondary)
                     if let s = model.monitor.snapshot {
-                        Text("· 已运行 \(Format.duration(from: s.startedAt, to: nil))")
+                        Text("· running for \(Format.duration(from: s.startedAt, to: nil))")
                             .foregroundStyle(.tertiary)
                     }
                 }
@@ -47,8 +47,10 @@ struct OverviewView: View {
             Button {
                 Task { await model.toggle() }
             } label: {
-                Text(model.isRunning ? "停用" : "启用")
-                    .frame(minWidth: 64)
+                Group {
+                    if model.isRunning { Text("Turn Off") } else { Text("Turn On") }
+                }
+                .frame(minWidth: 64)
             }
             .controlSize(.large)
             .buttonStyle(.borderedProminent)
@@ -67,26 +69,28 @@ struct OverviewView: View {
         if !ext.isInstalled || !hasServer || !hasRule {
             GroupBox {
                 VStack(alignment: .leading, spacing: 12) {
-                    step(1, "安装网络扩展", done: ext.isInstalled, detail: extensionDetail(ext)) {
+                    step(1, "Install the network extension", done: ext.isInstalled, detail: extensionDetail(ext)) {
                         if case .awaitingApproval = ext {
-                            Button("打开系统设置") { openExtensionSettings() }
+                            Button("Open System Settings") { openExtensionSettings() }
                         } else if !ext.isInstalled {
-                            Button("安装") { model.extensionManager.activate() }
+                            Button("Install") { model.extensionManager.activate() }
                                 .disabled(ext == .activating)
                         }
                     }
                     Divider()
-                    step(2, "添加代理服务器", done: hasServer, detail: "支持 SOCKS5 和 HTTP 代理") {
-                        if !hasServer { Button("添加") { selection = .servers } }
+                    step(2, "Add a proxy server", done: hasServer,
+                         detail: String(localized: "SOCKS5 and HTTP proxies are supported")) {
+                        if !hasServer { Button("Add") { selection = .servers } }
                     }
                     Divider()
-                    step(3, "选择要走代理的应用", done: hasRule, detail: "支持 .app 和命令行工具（如 curl、git）") {
-                        if !hasRule { Button("添加") { selection = .rules } }
+                    step(3, "Choose the apps to proxy", done: hasRule,
+                         detail: String(localized: "Works with .app bundles and command-line tools such as curl and git")) {
+                        if !hasRule { Button("Add") { selection = .rules } }
                     }
                 }
                 .padding(6)
             } label: {
-                Text("开始使用").font(.headline)
+                Text("Get Started").font(.headline)
             }
         }
     }
@@ -94,7 +98,7 @@ struct OverviewView: View {
     private func extensionDetail(_ state: ExtensionManager.State) -> String {
         switch state {
         case .awaitingApproval:
-            return "请打开「系统设置 › 通用 › 登录项与扩展 › 网络扩展」，允许 ProxyAppX。"
+            return String(localized: "Open System Settings › General › Login Items & Extensions › Network Extensions and allow ProxyAppX.")
         case let .failed(message):
             return message
         default:
@@ -102,7 +106,7 @@ struct OverviewView: View {
         }
     }
 
-    private func step<Accessory: View>(_ n: Int, _ title: String, done: Bool, detail: String,
+    private func step<Accessory: View>(_ n: Int, _ title: LocalizedStringKey, done: Bool, detail: String,
                                        @ViewBuilder accessory: () -> Accessory) -> some View {
         HStack(alignment: .top, spacing: 12) {
             ZStack {
@@ -110,7 +114,7 @@ struct OverviewView: View {
                 if done {
                     Image(systemName: "checkmark").font(.caption.bold()).foregroundStyle(.white)
                 } else {
-                    Text("\(n)").font(.caption.bold())
+                    Text(verbatim: "\(n)").font(.caption.bold())
                 }
             }
             VStack(alignment: .leading, spacing: 2) {
@@ -160,13 +164,14 @@ struct OverviewView: View {
         let s = model.monitor.snapshot
         let t = s?.totals ?? TrafficTotals()
         return LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 12), count: 4), spacing: 12) {
-            StatTile(title: "活动连接", value: "\(s?.active.count ?? 0)", systemImage: "link")
-            StatTile(title: "上传", value: Format.rate(model.monitor.upRate), caption: "累计 \(Format.bytes(t.bytesUp))",
-                     systemImage: "arrow.up")
-            StatTile(title: "下载", value: Format.rate(model.monitor.downRate), caption: "累计 \(Format.bytes(t.bytesDown))",
-                     systemImage: "arrow.down")
-            StatTile(title: "已代理 / 阻断", value: "\(t.proxied) / \(t.blocked)",
-                     caption: t.failed > 0 ? "\(t.failed) 次失败" : "直连 \(t.direct)", systemImage: "arrow.triangle.branch")
+            StatTile(title: "Active connections", value: "\(s?.active.count ?? 0)", systemImage: "link")
+            StatTile(title: "Upload", value: Format.rate(model.monitor.upRate),
+                     caption: String(localized: "Total \(Format.bytes(t.bytesUp))"), systemImage: "arrow.up")
+            StatTile(title: "Download", value: Format.rate(model.monitor.downRate),
+                     caption: String(localized: "Total \(Format.bytes(t.bytesDown))"), systemImage: "arrow.down")
+            StatTile(title: "Proxied / blocked", value: "\(t.proxied) / \(t.blocked)",
+                     caption: t.failed > 0 ? String(localized: "\(t.failed) failed") : String(localized: "\(t.direct) direct"),
+                     systemImage: "arrow.triangle.branch")
         }
     }
 
@@ -190,7 +195,7 @@ struct OverviewView: View {
                         if rule.id != enabled.prefix(8).last?.id { Divider() }
                     }
                     if enabled.count > 8 {
-                        Button("查看全部 \(enabled.count) 条规则") { selection = .rules }
+                        Button("Show all \(enabled.count) rules") { selection = .rules }
                             .buttonStyle(.link)
                             .padding(.top, 6)
                     }
@@ -198,9 +203,9 @@ struct OverviewView: View {
                 .padding(4)
             } label: {
                 HStack {
-                    Text("生效中的规则").font(.headline)
+                    Text("Active Rules").font(.headline)
                     Spacer()
-                    Text("未命中规则的应用：\(defaultActionText)")
+                    Text("Apps without a rule: \(defaultActionText)")
                         .font(.callout)
                         .foregroundStyle(.secondary)
                 }
@@ -211,15 +216,17 @@ struct OverviewView: View {
     private var defaultActionText: String {
         let cfg = model.store.configuration
         switch cfg.settings.defaultAction {
-        case .direct: return "直连"
-        case .block: return "阻断"
-        case let .proxy(id): return "代理（\(cfg.server(id: id)?.name ?? "服务器缺失")）"
+        case .direct: return String(localized: "Direct")
+        case .block: return String(localized: "Block")
+        case let .proxy(id):
+            let name = cfg.server(id: id)?.name ?? String(localized: "Server missing")
+            return String(localized: "Proxy (\(name))")
         }
     }
 }
 
 private struct StatTile: View {
-    let title: String
+    let title: LocalizedStringKey
     let value: String
     var caption: String? = nil
     let systemImage: String

@@ -22,6 +22,8 @@ final class AppModel {
     private(set) var loginItemError: String?
 
     init() {
+        // 核心库里的错误信息、状态文字跟随界面语言
+        L10n.language = AppLanguage(localization: Bundle.main.preferredLocalizations.first)
         controller = ProxyController(providerBundleIdentifier: extensionManager.extensionIdentifier)
         monitor = StatusMonitor(controller: controller)
 
@@ -86,18 +88,18 @@ final class AppModel {
         let cfg = store.configuration
         var out: [String] = []
         if cfg.servers.isEmpty {
-            out.append("还没有添加代理服务器。")
+            out.append(String(localized: "No proxy server has been added yet."))
         }
         if cfg.rules.filter(\.enabled).isEmpty && !cfg.settings.defaultAction.isProxy {
-            out.append("还没有启用的应用规则，目前所有流量都直连。")
+            out.append(String(localized: "No app rules are enabled, so all traffic currently goes direct."))
         }
         if let id = cfg.settings.defaultAction.serverID, let server = cfg.server(id: id),
            TargetAddress(host: server.host, port: server.port).isLoopback {
-            out.append("默认动作是代理到本机的「\(server.name)」。请给本机的代理客户端（如 Clash、v2ray）添加一条「直连」规则，否则它自己的出站流量会被再次代理，形成回环。")
+            out.append(String(localized: "The default action proxies through \"\(server.name)\" on this Mac. Add a Direct rule for the local proxy client (such as Clash or v2ray); otherwise its own outgoing traffic is proxied again and loops."))
         }
         let missing = cfg.rules.filter { r in r.action.serverID.map { cfg.server(id: $0) == nil } ?? false }
         if !missing.isEmpty {
-            out.append("有 \(missing.count) 条规则引用的代理服务器已不存在。")
+            out.append(String(localized: "\(missing.count) rules use a proxy server that no longer exists."))
         }
         out.append(contentsOf: tunnelWarnings)
         return out
@@ -109,14 +111,14 @@ final class AppModel {
         let settings = store.configuration.settings
         var out: [String] = []
         if !settings.upstreamAvoidTunnels && !remoteServersInUse.isEmpty {
-            let names = remoteServersInUse.map(\.name).joined(separator: "、")
-            out.append("检测到 \(tunnel.summary)。ProxyAppX 连接远程代理（\(names)）的流量会再经过它，可能被它二次代理。可在「设置 › 与其他 VPN / TUN 共存」中开启「上游连接绕过其他 VPN / TUN」，或在 Clash 规则中加入 \(Self.clashDirectRule)。")
+            let names = remoteServersInUse.map(\.name).joined(separator: String(localized: ", ", comment: "Separator between app names"))
+            out.append(String(localized: "Detected: \(tunnel.summary). ProxyAppX's connections to remote proxies (\(names)) also pass through it and may be proxied twice. Turn on \"Upstream connections bypass other VPN / TUN\" under Settings › Coexisting with Other VPN / TUN, or add \(Self.clashDirectRule) to your Clash rules."))
         }
         if tunnel.isFakeIP && !settings.preferHostname {
-            out.append("\(tunnel.interface) 处于 fake-IP 模式，建议在设置中开启「优先把域名交给代理解析」，否则远程代理收到的是 198.18.x.x 这类无效地址。")
+            out.append(String(localized: "\(tunnel.interface) is in fake-IP mode. Turn on \"Send hostnames to the proxy for resolution\" in Settings; otherwise remote proxies receive unusable addresses like 198.18.x.x."))
         }
         if !settings.bypassBoundFlows && settings.defaultAction.isProxy {
-            out.append("已关闭「绑定网卡的连接直连」且默认动作为代理，\(tunnel.interface) 背后的代理内核可能被接管，形成回环。")
+            out.append(String(localized: "\"Bound connections go direct\" is off and the default action is a proxy, so the proxy core behind \(tunnel.interface) may be taken over and loop."))
         }
         return out
     }

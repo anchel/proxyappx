@@ -16,8 +16,12 @@ struct LogsView: View {
     var body: some View {
         Group {
             if entries.isEmpty {
-                EmptyStateView(systemImage: "doc.plaintext", title: "暂无日志",
-                               message: model.isRunning ? "扩展的事件会显示在这里。" : "代理未运行。")
+                if model.isRunning {
+                    EmptyStateView(systemImage: "doc.plaintext", title: "No Logs",
+                                   message: "Events from the network extension show up here.")
+                } else {
+                    EmptyStateView(systemImage: "doc.plaintext", title: "No Logs", message: "The proxy is off.")
+                }
             } else {
                 List(entries) { entry in
                     HStack(alignment: .firstTextBaseline, spacing: 10) {
@@ -35,14 +39,14 @@ struct LogsView: View {
                 .listStyle(.inset(alternatesRowBackgrounds: true))
             }
         }
-        .navigationTitle("日志")
+        .navigationTitle(SidebarItem.logs.title)
         .searchable(text: $search, placement: .toolbar)
         .toolbar {
-            Picker("级别", selection: $minLevel) {
-                Text("全部").tag(LogEntry.Level.debug)
-                Text("信息").tag(LogEntry.Level.info)
-                Text("警告").tag(LogEntry.Level.warning)
-                Text("错误").tag(LogEntry.Level.error)
+            Picker("Level", selection: $minLevel) {
+                Text("All").tag(LogEntry.Level.debug)
+                Text("Info").tag(LogEntry.Level.info)
+                Text("Warnings").tag(LogEntry.Level.warning)
+                Text("Errors").tag(LogEntry.Level.error)
             }
             .pickerStyle(.menu)
             Button {
@@ -51,13 +55,13 @@ struct LogsView: View {
                 NSPasteboard.general.clearContents()
                 NSPasteboard.general.setString(text, forType: .string)
             } label: {
-                Label("复制", systemImage: "doc.on.doc")
+                Label("Copy", systemImage: "doc.on.doc")
             }
             .disabled(entries.isEmpty)
             Button {
                 Task { await model.monitor.clearLogs() }
             } label: {
-                Label("清空", systemImage: "trash")
+                Label("Clear", systemImage: "trash")
             }
         }
     }

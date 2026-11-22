@@ -10,17 +10,19 @@ struct MenuBarView: View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("ProxyAppX").font(.headline)
+                    Text(verbatim: "ProxyAppX").font(.headline)
                     HStack(spacing: 5) {
                         StatusDot(color: model.isRunning ? .green : (model.controller.isTransitioning ? .orange : .secondary))
                         Text(model.controller.statusTitle).font(.caption).foregroundStyle(.secondary)
                     }
                 }
                 Spacer()
-                Toggle("", isOn: Binding(
+                Toggle(isOn: Binding(
                     get: { model.isRunning || model.controller.status == .connecting },
                     set: { on in Task { await model.setEnabled(on) } }
-                ))
+                )) {
+                    Text("Enabled")
+                }
                 .toggleStyle(.switch)
                 .labelsHidden()
                 .disabled(model.controller.isBusy || model.controller.status == .disconnecting)
@@ -28,11 +30,11 @@ struct MenuBarView: View {
 
             if model.isRunning {
                 HStack {
-                    Label(Format.rate(model.monitor.upRate), systemImage: "arrow.up")
+                    Label { Text(verbatim: Format.rate(model.monitor.upRate)) } icon: { Image(systemName: "arrow.up") }
                     Spacer()
-                    Label(Format.rate(model.monitor.downRate), systemImage: "arrow.down")
+                    Label { Text(verbatim: Format.rate(model.monitor.downRate)) } icon: { Image(systemName: "arrow.down") }
                     Spacer()
-                    Label("\(model.monitor.snapshot?.active.count ?? 0)", systemImage: "link")
+                    Label { Text(verbatim: "\(model.monitor.snapshot?.active.count ?? 0)") } icon: { Image(systemName: "link") }
                 }
                 .font(.caption.monospacedDigit())
                 .foregroundStyle(.secondary)
@@ -52,7 +54,7 @@ struct MenuBarView: View {
                         .font(.callout)
                     }
                     if rules.count > 6 {
-                        Text("还有 \(rules.count - 6) 条…").font(.caption).foregroundStyle(.secondary)
+                        Text("\(rules.count - 6) more…").font(.caption).foregroundStyle(.secondary)
                     }
                 }
             }
@@ -63,12 +65,12 @@ struct MenuBarView: View {
 
             Divider()
             HStack {
-                Button("打开主窗口") {
+                Button("Open Main Window") {
                     openWindow(id: "main")
                     NSApp.activate()
                 }
                 Spacer()
-                Button("退出") { NSApp.terminate(nil) }
+                Button("Quit") { NSApp.terminate(nil) }
             }
             .buttonStyle(.borderless)
         }

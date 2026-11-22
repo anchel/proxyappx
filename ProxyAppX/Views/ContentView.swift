@@ -7,13 +7,13 @@ enum SidebarItem: String, CaseIterable, Identifiable, Hashable {
 
     var title: String {
         switch self {
-        case .overview: return "概览"
-        case .rules: return "应用规则"
-        case .servers: return "代理服务器"
-        case .connections: return "连接"
-        case .discover: return "未匹配的应用"
-        case .logs: return "日志"
-        case .settings: return "设置"
+        case .overview: return String(localized: "Overview")
+        case .rules: return String(localized: "App Rules")
+        case .servers: return String(localized: "Proxy Servers")
+        case .connections: return String(localized: "Connections")
+        case .discover: return String(localized: "Unmatched Apps")
+        case .logs: return String(localized: "Logs")
+        case .settings: return String(localized: "Settings")
         }
     }
 
@@ -42,7 +42,7 @@ struct ContentView: View {
                         row(item)
                     }
                 }
-                Section("监控") {
+                Section("Monitoring") {
                     ForEach([SidebarItem.connections, .discover, .logs]) { item in
                         row(item)
                     }
@@ -51,7 +51,7 @@ struct ContentView: View {
                     row(.settings)
                 }
             }
-            .navigationSplitViewColumnWidth(min: 180, ideal: 200)
+            .navigationSplitViewColumnWidth(min: 190, ideal: 210)
             .safeAreaInset(edge: .bottom) {
                 SidebarStatus()
                     .padding(12)
@@ -95,10 +95,12 @@ private struct SidebarStatus: View {
             Text(model.controller.statusTitle)
                 .font(.callout)
             Spacer()
-            Toggle("", isOn: Binding(
+            Toggle(isOn: Binding(
                 get: { model.isRunning || model.controller.status == .connecting },
                 set: { on in Task { await model.setEnabled(on) } }
-            ))
+            )) {
+                Text("Enabled")
+            }
             .toggleStyle(.switch)
             .controlSize(.small)
             .labelsHidden()

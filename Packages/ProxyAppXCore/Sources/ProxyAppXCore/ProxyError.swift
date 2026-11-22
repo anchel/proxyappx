@@ -15,17 +15,17 @@ public enum ProxyError: Error, LocalizedError, Equatable, Sendable {
 
     public var errorDescription: String? {
         switch self {
-        case .timeout: return "连接超时"
-        case let .connectionFailed(m): return "无法连接：\(m)"
-        case .connectionClosed: return "连接被对端关闭"
-        case let .protocolViolation(m): return "协议错误：\(m)"
-        case .authenticationRequired: return "代理要求认证，但未配置用户名和密码"
-        case .authenticationFailed: return "代理认证失败（用户名或密码错误）"
-        case .noAcceptableAuthMethod: return "代理不支持可用的认证方式"
-        case let .socksReply(code): return "SOCKS5 错误：\(SOCKS5.replyDescription(code))"
-        case let .httpStatus(code, line): return "HTTP 代理返回 \(code)：\(line)"
-        case let .invalidTarget(m): return "目标地址无效：\(m)"
-        case let .unsupported(m): return "不支持：\(m)"
+        case .timeout: return L10n.t("Connection timed out", "连接超时")
+        case let .connectionFailed(m): return L10n.t("Cannot connect: \(m)", "无法连接：\(m)")
+        case .connectionClosed: return L10n.t("Connection closed by the peer", "连接被对端关闭")
+        case let .protocolViolation(m): return L10n.t("Protocol error: \(m)", "协议错误：\(m)")
+        case .authenticationRequired: return L10n.t("The proxy requires authentication, but no username and password are configured", "代理要求认证，但未配置用户名和密码")
+        case .authenticationFailed: return L10n.t("Proxy authentication failed (wrong username or password)", "代理认证失败（用户名或密码错误）")
+        case .noAcceptableAuthMethod: return L10n.t("The proxy accepts none of the offered authentication methods", "代理不支持可用的认证方式")
+        case let .socksReply(code): return L10n.t("SOCKS5 error: \(SOCKS5.replyDescription(code))", "SOCKS5 错误：\(SOCKS5.replyDescription(code))")
+        case let .httpStatus(code, line): return L10n.t("HTTP proxy returned \(code): \(line)", "HTTP 代理返回 \(code)：\(line)")
+        case let .invalidTarget(m): return L10n.t("Invalid target: \(m)", "目标地址无效：\(m)")
+        case let .unsupported(m): return L10n.t("Unsupported: \(m)", "不支持：\(m)")
         }
     }
 }

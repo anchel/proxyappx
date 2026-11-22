@@ -2,6 +2,12 @@ import AppKit
 import ProxyAppXCore
 import SwiftUI
 
+/// 当前界面实际使用的语言（已考虑「设置 › 语言」里的覆盖），用于日期、时长等格式化。
+enum AppLocale {
+    static var localization: String { Bundle.main.preferredLocalizations.first ?? "en" }
+    static var locale: Locale { Locale(identifier: localization) }
+}
+
 enum Format {
     static func bytes(_ n: UInt64) -> String {
         ByteCountFormatter.string(fromByteCount: Int64(clamping: n), countStyle: .binary)
@@ -11,11 +17,20 @@ enum Format {
         ByteCountFormatter.string(fromByteCount: Int64(bytesPerSecond), countStyle: .binary) + "/s"
     }
 
+    private static let durationFormatter: DateComponentsFormatter = {
+        let f = DateComponentsFormatter()
+        f.unitsStyle = .abbreviated
+        f.maximumUnitCount = 2
+        f.allowedUnits = [.hour, .minute, .second]
+        var calendar = Calendar.current
+        calendar.locale = AppLocale.locale
+        f.calendar = calendar
+        return f
+    }()
+
     static func duration(from start: Date, to end: Date?) -> String {
-        let seconds = Int((end ?? Date()).timeIntervalSince(start))
-        if seconds < 60 { return "\(seconds) 秒" }
-        if seconds < 3600 { return "\(seconds / 60) 分 \(seconds % 60) 秒" }
-        return "\(seconds / 3600) 时 \(seconds % 3600 / 60) 分"
+        let seconds = max(0, (end ?? Date()).timeIntervalSince(start).rounded(.down))
+        return durationFormatter.string(from: seconds) ?? "\(Int(seconds))s"
     }
 
     static let time: DateFormatter = {
@@ -45,23 +60,23 @@ struct ActionBadge: View {
     init(action: RuleAction, servers: [ProxyServer]) {
         switch action {
         case let .proxy(id):
-            text = servers.first { $0.id == id }?.name ?? "服务器缺失"
+            text = servers.first { $0.id == id }?.name ?? String(localized: "Server missing")
             color = servers.contains { $0.id == id } ? .accentColor : .orange
         case .direct:
-            text = "直连"
+            text = String(localized: "Direct")
             color = .secondary
         case .block:
-            text = "阻断"
+            text = String(localized: "Block")
             color = .red
         }
     }
 
     init(verdict: ConnectionVerdict, server: String?) {
         switch verdict {
-        case .proxy: text = server ?? "代理"; color = .accentColor
-        case .direct: text = "直连"; color = .secondary
-        case .block: text = "阻断"; color = .red
-        case .fallbackDirect: text = "回落直连"; color = .orange
+        case .proxy: text = server ?? String(localized: "Proxy"); color = .accentColor
+        case .direct: text = String(localized: "Direct"); color = .secondary
+        case .block: text = String(localized: "Block"); color = .red
+        case .fallbackDirect: text = String(localized: "Fell back to direct"); color = .orange
         }
     }
 
@@ -86,8 +101,8 @@ struct StatusDot: View {
 /// 空状态占位。
 struct EmptyStateView: View {
     let systemImage: String
-    let title: String
-    let message: String
+    let title: LocalizedStringKey
+    let message: LocalizedStringKey
 
     var body: some View {
         ContentUnavailableView {

@@ -36,7 +36,7 @@ enum Keychain {
         guard update == errSecItemNotFound else { return false }
         var add = base
         add[kSecValueData as String] = data
-        add[kSecAttrLabel as String] = "ProxyAppX 代理密码"
+        add[kSecAttrLabel as String] = "ProxyAppX proxy password"
         add[kSecAttrAccessible as String] = kSecAttrAccessibleAfterFirstUnlock
         return SecItemAdd(add as CFDictionary, nil) == errSecSuccess
     }

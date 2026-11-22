@@ -22,13 +22,13 @@ final class ExtensionManager {
 
         var title: String {
             switch self {
-            case .unknown: return "正在检查…"
-            case .notInstalled: return "未安装"
-            case .activating: return "正在安装…"
-            case .awaitingApproval: return "等待你在系统设置中允许"
-            case .needsReboot: return "需要重启电脑后生效"
-            case let .installed(v): return "已启用（\(v)）"
-            case .failed: return "安装失败"
+            case .unknown: return String(localized: "Checking…")
+            case .notInstalled: return String(localized: "Not installed")
+            case .activating: return String(localized: "Installing…")
+            case .awaitingApproval: return String(localized: "Waiting for your approval in System Settings")
+            case .needsReboot: return String(localized: "Restart your Mac to finish")
+            case let .installed(v): return String(localized: "Enabled (\(v))")
+            case .failed: return String(localized: "Installation failed")
             }
         }
     }
@@ -131,21 +131,21 @@ final class ExtensionManager {
         }
         switch code {
         case .unsupportedParentBundleLocation:
-            return "请先把 ProxyAppX.app 移到「/Applications（应用程序）」文件夹，再重新打开它。"
+            return String(localized: "Move ProxyAppX.app to the Applications folder (/Applications) first, then open it again.")
         case .missingEntitlement:
-            return "缺少系统扩展 entitlement，请检查签名配置（Config/Signing.xcconfig）。"
+            return String(localized: "The system extension entitlement is missing. Check the signing configuration (Config/Signing.xcconfig).")
         case .codeSignatureInvalid:
-            return "代码签名无效。系统扩展必须用有效证书和包含 Network Extension 能力的描述文件签名。"
+            return String(localized: "Invalid code signature. The system extension must be signed with a valid certificate and a provisioning profile that includes the Network Extension capability.")
         case .extensionNotFound:
-            return "App 内没有找到系统扩展，请重新构建。"
+            return String(localized: "The system extension was not found inside the app. Rebuild it.")
         case .requestCanceled:
-            return "请求已取消。"
+            return String(localized: "The request was canceled.")
         case .authorizationRequired:
-            return "需要授权，请在系统设置中允许。"
+            return String(localized: "Authorization is required. Allow it in System Settings.")
         case .validationFailed:
-            return "系统扩展校验失败（签名、Info.plist 或 entitlement 不匹配）。"
+            return String(localized: "The system extension failed validation (signature, Info.plist or entitlements do not match).")
         default:
-            return "\(error.localizedDescription)（代码 \(ns.code)）"
+            return String(localized: "\(error.localizedDescription) (code \(ns.code))")
         }
     }
 }

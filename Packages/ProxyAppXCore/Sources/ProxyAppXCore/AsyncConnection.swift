@@ -19,8 +19,8 @@ func describe(_ error: Error) -> String {
     if let nw = error as? NWError {
         switch nw {
         case let .posix(code): return String(cString: strerror(code.rawValue))
-        case let .dns(code): return "DNS 解析失败（\(code)）"
-        case let .tls(status): return "TLS 错误（\(status)）"
+        case let .dns(code): return L10n.t("DNS resolution failed (\(code))", "DNS 解析失败（\(code)）")
+        case let .tls(status): return L10n.t("TLS error (\(status))", "TLS 错误（\(status)）")
         default: return "\(nw)"
         }
     }
@@ -141,7 +141,7 @@ public final class AsyncConnection: @unchecked Sendable {
             if let r = buffer.range(of: delimiter, in: searchFrom..<buffer.count) {
                 return consume(r.upperBound)
             }
-            if buffer.count > maxLength { throw ProxyError.protocolViolation("响应头过长") }
+            if buffer.count > maxLength { throw ProxyError.protocolViolation(L10n.t("Response header too long", "响应头过长")) }
             searchFrom = max(0, buffer.count - delimiter.count + 1)
             guard let chunk = try await receiveRaw(maximumLength: 4096) else { throw ProxyError.connectionClosed }
             buffer.append(chunk)
