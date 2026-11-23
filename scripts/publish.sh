@@ -20,6 +20,9 @@ OUT="$ROOT/build/release"
 DMG="$OUT/ProxyAppX-$VERSION.dmg"
 NOTES="docs/release-notes/$TAG.md"
 
+command -v gh >/dev/null || { echo "找不到 GitHub CLI，请先安装并登录：brew install gh && gh auth login"; exit 1; }
+gh auth status >/dev/null 2>&1 || { echo "GitHub CLI 未登录，请先运行 gh auth login"; exit 1; }
+
 [[ -f "$DMG" && -f "$DMG.sha256" ]] || { echo "找不到 ${DMG:t}，请先运行 make release"; exit 1; }
 [[ -f "$NOTES" ]] || { echo "缺少发布说明 $NOTES"; exit 1; }
 (cd "$OUT" && shasum -a 256 -c -s "${DMG:t}.sha256") || { echo "DMG 校验和不匹配"; exit 1; }
