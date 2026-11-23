@@ -78,6 +78,15 @@ final class ConfigStore {
         mutate { $0.rules.removeAll { ids.contains($0.id) } }
     }
 
+    func setRulesAction(_ action: RuleAction, for ids: Set<AppRule.ID>) {
+        mutate { cfg in
+            if let serverID = action.serverID, cfg.server(id: serverID) == nil { return }
+            for i in cfg.rules.indices where ids.contains(cfg.rules[i].id) {
+                cfg.rules[i].action = action
+            }
+        }
+    }
+
     func setRuleEnabled(_ id: UUID, _ enabled: Bool) {
         mutate { cfg in
             if let i = cfg.rules.firstIndex(where: { $0.id == id }) { cfg.rules[i].enabled = enabled }

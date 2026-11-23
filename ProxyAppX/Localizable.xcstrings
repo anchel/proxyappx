@@ -1948,6 +1948,16 @@
         }
       }
     },
+    "Switch Proxy": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "切换代理"
+          }
+        }
+      }
+    },
     "Test": {
       "localizations": {
         "zh-Hans": {

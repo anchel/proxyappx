@@ -18,6 +18,10 @@ struct RulesView: View {
         }
     }
 
+    private var selectedRuleIDs: Set<AppRule.ID> {
+        selection.intersection(rules.map(\.id))
+    }
+
     var body: some View {
         Group {
             if model.store.configuration.rules.isEmpty {
@@ -110,11 +114,13 @@ struct RulesView: View {
             }
             if !ids.isEmpty {
                 Menu("Set Action") {
-                    ForEach(model.store.configuration.servers) { s in
-                        Button("Proxy: \(s.name)") { setAction(.proxy(serverID: s.id), for: ids) }
+                    ForEach(servers) { server in
+                        Button("Proxy: \(server.name)") {
+                            model.store.setRulesAction(.proxy(serverID: server.id), for: ids)
+                        }
                     }
-                    Button("Direct") { setAction(.direct, for: ids) }
-                    Button("Block") { setAction(.block, for: ids) }
+                    Button("Direct") { model.store.setRulesAction(.direct, for: ids) }
+                    Button("Block") { model.store.setRulesAction(.block, for: ids) }
                 }
                 Button("Delete", role: .destructive) { delete(ids) }
             }
@@ -126,7 +132,25 @@ struct RulesView: View {
 
     @ToolbarContentBuilder
     private var toolbar: some ToolbarContent {
+        let servers = model.store.configuration.servers
+        let ids = selectedRuleIDs
         ToolbarItemGroup {
+            Menu {
+                ForEach(servers) { server in
+                    let title = server.name.isEmpty ? server.endpointDescription : "\(server.name) (\(server.endpointDescription))"
+                    Button {
+                        model.store.setRulesAction(.proxy(serverID: server.id), for: ids)
+                    } label: {
+                        Text(verbatim: title)
+                    }
+                }
+            } label: {
+                Label("Switch Proxy", systemImage: "arrow.left.arrow.right")
+                    .labelStyle(.titleAndIcon)
+            }
+            .disabled(ids.isEmpty || servers.isEmpty)
+            .help("Switch Proxy")
+
             Button {
                 delete(selection)
             } label: {
@@ -175,13 +199,6 @@ struct RulesView: View {
         guard !ids.isEmpty else { return }
         model.store.deleteRules(ids)
         selection.subtract(ids)
-    }
-
-    private func setAction(_ action: RuleAction, for ids: Set<AppRule.ID>) {
-        for var rule in model.store.configuration.rules where ids.contains(rule.id) {
-            rule.action = action
-            model.store.upsertRule(rule)
-        }
     }
 }
 
