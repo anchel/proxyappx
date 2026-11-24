@@ -61,7 +61,8 @@ struct RulesView: View {
                     Text("Enabled")
                 }
                 .labelsHidden()
-                .toggleStyle(.checkbox)
+                .toggleStyle(.switch)
+                .controlSize(.mini)
             }
             .width(40)
 
