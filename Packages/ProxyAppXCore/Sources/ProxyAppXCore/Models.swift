@@ -130,7 +130,7 @@ public struct AppRule: Codable, Identifiable, Hashable, Sendable {
         bundleID: String,
         path: String,
         action: RuleAction,
-        udpPolicy: UDPPolicy = .block,
+        udpPolicy: UDPPolicy = .proxy,
         enabled: Bool = true
     ) {
         self.id = id

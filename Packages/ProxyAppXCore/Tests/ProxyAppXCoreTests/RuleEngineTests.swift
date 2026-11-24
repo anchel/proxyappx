@@ -148,7 +148,8 @@ final class RuleEngineTests: XCTestCase {
 
     func testProxyAppDNSUsesAppProxyEvenForLANResolverAndBlockedUDP() {
         let settings = GeneralSettings(defaultAction: .proxy(serverID: socks.id))
-        let rule = AppRule(name: "Browser", bundleID: "test.browser", path: "", action: .proxy(serverID: http.id))
+        let rule = AppRule(name: "Browser", bundleID: "test.browser", path: "", action: .proxy(serverID: http.id),
+                           udpPolicy: .block)
         let direct = AppRule(name: "Direct", bundleID: "test.direct", path: "", action: .direct)
         let e = engine(rules: [rule, direct], settings: settings)
         for udp in [false, true] {
@@ -271,6 +272,8 @@ final class RuleEngineTests: XCTestCase {
         func rule(_ p: UDPPolicy, server: ProxyServer) -> AppRule {
             AppRule(name: "X", bundleID: "com.x", path: "", action: .proxy(serverID: server.id), udpPolicy: p)
         }
+        XCTAssertEqual(AppRule(name: "X", bundleID: "com.x", path: "", action: .proxy(serverID: socks.id)).udpPolicy,
+                       .proxy)
         XCTAssertEqual(engine(rules: [rule(.block, server: socks)]).decide(ctx("com.x", udp: true)).verdict, .block)
         XCTAssertEqual(engine(rules: [rule(.direct, server: socks)]).decide(ctx("com.x", udp: true)).verdict, .direct)
         XCTAssertEqual(engine(rules: [rule(.proxy, server: socks)]).decide(ctx("com.x", udp: true)).verdict, .proxy(socks))
