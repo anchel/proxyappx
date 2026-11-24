@@ -38,6 +38,7 @@ public struct ConnectionSnapshot: Codable, Identifiable, Hashable, Sendable {
     public var target: String
     public var verdict: ConnectionVerdict
     public var reason: Decision.Reason
+    public var ruleID: UUID?
     public var ruleName: String?
     public var serverName: String?
     public var bytesUp: UInt64
@@ -49,7 +50,7 @@ public struct ConnectionSnapshot: Codable, Identifiable, Hashable, Sendable {
     public init(
         id: UInt64, appName: String, signingID: String, executablePath: String?,
         transport: FlowContext.Transport, target: String, verdict: ConnectionVerdict,
-        reason: Decision.Reason, ruleName: String?, serverName: String?,
+        reason: Decision.Reason, ruleID: UUID? = nil, ruleName: String?, serverName: String?,
         bytesUp: UInt64 = 0, bytesDown: UInt64 = 0, startedAt: Date = Date(),
         endedAt: Date? = nil, error: String? = nil
     ) {
@@ -61,6 +62,7 @@ public struct ConnectionSnapshot: Codable, Identifiable, Hashable, Sendable {
         self.target = target
         self.verdict = verdict
         self.reason = reason
+        self.ruleID = ruleID
         self.ruleName = ruleName
         self.serverName = serverName
         self.bytesUp = bytesUp
@@ -98,6 +100,13 @@ public struct LogEntry: Codable, Identifiable, Hashable, Sendable {
         self.level = level
         self.message = message
     }
+}
+
+public struct RuleTraffic: Codable, Hashable, Sendable {
+    public var bytesUp: UInt64 = 0
+    public var bytesDown: UInt64 = 0
+
+    public init() {}
 }
 
 public struct TrafficTotals: Codable, Hashable, Sendable {
@@ -142,12 +151,14 @@ public struct StatusSnapshot: Codable, Sendable {
     public var recent: [ConnectionSnapshot]
     public var unmatched: [UnmatchedApp]
     public var totals: TrafficTotals
+    /// 旧版本扩展不提供按规则统计的流量。
+    public var trafficByRule: [UUID: RuleTraffic]?
     public var logs: [LogEntry]
 
     public init(
         startedAt: Date, extensionVersion: String, ruleCount: Int,
         active: [ConnectionSnapshot], recent: [ConnectionSnapshot], unmatched: [UnmatchedApp] = [],
-        totals: TrafficTotals, logs: [LogEntry]
+        totals: TrafficTotals, trafficByRule: [UUID: RuleTraffic]? = nil, logs: [LogEntry]
     ) {
         self.startedAt = startedAt
         self.extensionVersion = extensionVersion
@@ -156,6 +167,7 @@ public struct StatusSnapshot: Codable, Sendable {
         self.recent = recent
         self.unmatched = unmatched
         self.totals = totals
+        self.trafficByRule = trafficByRule
         self.logs = logs
     }
 }

@@ -180,30 +180,46 @@ struct OverviewView: View {
     @ViewBuilder
     private var rulesSummary: some View {
         let cfg = model.store.configuration
-        let enabled = cfg.rules.filter(\.enabled)
-        if !enabled.isEmpty {
+        let trafficByRule = model.isRunning ? model.monitor.snapshot?.trafficByRule : nil
+        if !cfg.rules.isEmpty {
             GroupBox {
-                VStack(spacing: 0) {
-                    ForEach(enabled.prefix(8)) { rule in
+                LazyVStack(alignment: .leading, spacing: 0) {
+                    if trafficByRule != nil {
+                        Text("Traffic forwarded by the extension this session")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .padding(.bottom, 4)
+                    }
+                    ForEach(cfg.rules) { rule in
                         HStack(spacing: 10) {
                             AppIcon(path: rule.path, size: 22)
                             Text(rule.name)
+                                .layoutPriority(1)
                             Spacer()
-                            ActionBadge(action: rule.action, servers: cfg.servers)
+                            if let trafficByRule {
+                                let traffic = trafficByRule[rule.id] ?? RuleTraffic()
+                                let up = Format.bytes(traffic.bytesUp)
+                                let down = Format.bytes(traffic.bytesDown)
+                                Text(verbatim: "U: \(up)   D: \(down)")
+                                    .font(.caption.monospacedDigit())
+                                    .foregroundStyle(.secondary)
+                                    .accessibilityLabel(Text("Uploaded \(up) · Downloaded \(down)"))
+                            }
+                            if rule.enabled {
+                                ActionBadge(action: rule.action, servers: cfg.servers)
+                            } else {
+                                Text("Disabled").font(.caption).foregroundStyle(.secondary)
+                            }
                         }
+                        .lineLimit(1)
                         .padding(.vertical, 6)
-                        if rule.id != enabled.prefix(8).last?.id { Divider() }
-                    }
-                    if enabled.count > 8 {
-                        Button("Show all \(enabled.count) rules") { selection = .rules }
-                            .buttonStyle(.link)
-                            .padding(.top, 6)
+                        if rule.id != cfg.rules.last?.id { Divider() }
                     }
                 }
                 .padding(4)
             } label: {
                 HStack {
-                    Text("Active Rules").font(.headline)
+                    Text("App Rules").font(.headline)
                     Spacer()
                     Text("Apps without a rule: \(defaultActionText)")
                         .font(.callout)

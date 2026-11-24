@@ -4,8 +4,6 @@ import ProxyAppXCore
 
 /// 记录连接、流量统计和日志，供 App 通过 IPC 查询。所有状态只保存在内存中。
 final class ConnectionTracker: @unchecked Sendable {
-    static let shared = ConnectionTracker()
-
     private let lock = NSLock()
     private let logger = Logger(subsystem: "com.proxyappx.extension", category: "proxy")
 
@@ -17,6 +15,7 @@ final class ConnectionTracker: @unchecked Sendable {
     private var unmatched: [String: UnmatchedApp] = [:]
     private var logs: [LogEntry] = []
     private var totals = TrafficTotals()
+    private var trafficByRule: [UUID: RuleTraffic] = [:]
 
     private let recentCapacity = 300
     private let unmatchedCapacity = 200
@@ -90,6 +89,10 @@ final class ConnectionTracker: @unchecked Sendable {
         defer { lock.unlock() }
         active[id]?.bytesUp += UInt64(up)
         active[id]?.bytesDown += UInt64(down)
+        if let ruleID = active[id]?.ruleID {
+            trafficByRule[ruleID, default: RuleTraffic()].bytesUp += UInt64(up)
+            trafficByRule[ruleID, default: RuleTraffic()].bytesDown += UInt64(down)
+        }
         totals.bytesUp += UInt64(up)
         totals.bytesDown += UInt64(down)
     }
@@ -172,6 +175,7 @@ final class ConnectionTracker: @unchecked Sendable {
             recent: recent.reversed(),
             unmatched: unmatched.values.sorted { $0.lastSeen > $1.lastSeen },
             totals: totals,
+            trafficByRule: trafficByRule,
             logs: newLogs
         )
     }

@@ -27,7 +27,7 @@ private final class EngineStore: @unchecked Sendable {
 /// 透明代理：拦截所有出站 TCP/UDP，按来源应用决定直连、阻断或转发到代理。
 final class TransparentProxyProvider: NETransparentProxyProvider, NEAppProxyUDPFlowHandling {
     private let store = EngineStore()
-    private let tracker = ConnectionTracker.shared
+    private let tracker = ConnectionTracker()
     private let resolver = ProcessResolver()
 
     // MARK: 生命周期
@@ -262,6 +262,7 @@ final class TransparentProxyProvider: NETransparentProxyProvider, NEAppProxyUDPF
             target: displayTarget(ctx),
             verdict: verdict,
             reason: decision.reason,
+            ruleID: decision.rule?.id,
             ruleName: decision.rule?.name,
             serverName: server.map { $0.name.isEmpty ? $0.endpointDescription : $0.name }
         )
